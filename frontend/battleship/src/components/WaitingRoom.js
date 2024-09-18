@@ -1,23 +1,19 @@
-import { useFormik } from 'formik';
-import * as Yup from 'yup'; // For validation (optional)
-import React from 'react';
+import { useFormik } from "formik";
+import * as Yup from "yup"; // For validation (optional)
+import React from "react";
 
 const WaitingRoom = ({ joinGameRoom }) => {
-
   // Set up Formik
   const formik = useFormik({
     initialValues: {
-      username: '',
-      gameRoom: '',
+      username: "",
+      gameRoom: "",
     },
     validationSchema: Yup.object({
-      username: Yup.string()
-        .required('Username is required'),
-      gameRoom: Yup.string()
-        .required('Game room is required'),
+      username: Yup.string().required("Username is required"),
+      gameRoom: Yup.string().required("Game room is required"),
     }),
     onSubmit: (values) => {
-      // Call the joinGameRoom function with form values
       joinGameRoom(values.username, values.gameRoom);
     },
   });

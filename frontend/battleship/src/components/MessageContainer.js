@@ -1,10 +1,15 @@
-import { Table, TableBody, TableCell, TableRow, TableContainer, Paper } from '@mui/material';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableRow,
+  TableContainer,
+} from "@mui/material";
 
 const MessageContainer = ({ messages }) => {
-
-   if (!messages || messages.length === 0) {
-      return <div>No messages available</div>;
-    }
+  if (!messages || messages.length === 0) {
+    return <div>No messages available</div>;
+  }
 
   return (
     <TableContainer>

@@ -1,0 +1,51 @@
+.board-grid {
+  display: grid;
+  gap: 0;
+}
+
+.cell {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #000;
+  box-sizing: border-box;
+}
+
+.cell.empty {
+  background-color: #fff;
+}
+
+.cell.hasship {
+  background-color: #00f;
+}
+
+.cell.damagedship {
+  background-color: #f00;
+}
+
+.cell.sunken {
+  background-color: #000;
+}
+
+.cell.missed {
+  background-color: #ddd;
+}
+
+.cell.green {
+  background-color: #0f0;
+}
+
+.cell.blue {
+  background-color: #00f;
+}
+
+.cell.orange {
+  background-color: orange;
+}
+
+.cell.purple {
+  background-color: #800080;
+}
+
+.cell.defaultcell {
+  background-color: #aaa;
+}
