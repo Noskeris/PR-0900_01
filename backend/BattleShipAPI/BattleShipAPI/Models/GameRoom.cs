@@ -4,7 +4,7 @@ namespace BattleShipAPI.Models
 {
     public class GameRoom
     {
-        public string GameRoomString { get; set; } = string.Empty;
+        public string GameRoomName { get; set; } = string.Empty;
         public GameState GameState { get; set; } = GameState.NotStarted;
 
     }

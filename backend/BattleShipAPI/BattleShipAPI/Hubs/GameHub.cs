@@ -13,13 +13,13 @@ namespace BattleShipAPI.Hubs
 
         public async Task JoinSpecificGameRoom(UserConnection connection)
         {
-            if (_db.connections.Values.Any(c => c.Room.GameRoomString == connection.Room.GameRoomString && c.Username == connection.Username))
+            if (_db.connections.Values.Any(c => c.GameRoom.GameRoomName == connection.GameRoom.GameRoomName && c.Username == connection.Username))
             {
                 await Clients.Caller.SendAsync("JoinFailed", "Username already taken in this room");
                 return;
             }
 
-            var usersInRoom = _db.connections.Values.Where(c => c.Room.GameRoomString == connection.Room.GameRoomString).ToList();
+            var usersInRoom = _db.connections.Values.Where(c => c.GameRoom.GameRoomName == connection.GameRoom.GameRoomName).ToList();
 
             connection.PlayerId = usersInRoom.Count + 1;
 
@@ -29,9 +29,9 @@ namespace BattleShipAPI.Hubs
                 return;
             }
 
-            await Groups.AddToGroupAsync(Context.ConnectionId, connection.Room.GameRoomString);
+            await Groups.AddToGroupAsync(Context.ConnectionId, connection.GameRoom.GameRoomName);
 
-            var isFirstUser = !_db.connections.Values.Any(c => c.Room.GameRoomString == connection.Room.GameRoomString);
+            var isFirstUser = !_db.connections.Values.Any(c => c.GameRoom.GameRoomName == connection.GameRoom.GameRoomName);
 
             if (isFirstUser)
             {
@@ -51,13 +51,13 @@ namespace BattleShipAPI.Hubs
         {
             if (_db.connections.TryGetValue(Context.ConnectionId, out UserConnection connection))
             {
-                var gameRoom = connection.Room.GameRoomString;
+                var gameRoom = connection.GameRoom.GameRoomName;
 
-                var userCountInSameGameRoom = _db.connections.Values.Count(c => c.Room.GameRoomString == gameRoom);
+                var userCountInSameGameRoom = _db.connections.Values.Count(c => c.GameRoom.GameRoomName == gameRoom);
 
                 Board? gameBoard = null;
 
-                var players = _db.connections.Values.Where(c => c.Room.GameRoomString == gameRoom).ToList();
+                var players = _db.connections.Values.Where(c => c.GameRoom.GameRoomName == gameRoom).ToList();
 
                 if (players.Count == 0)
                     return;
@@ -104,7 +104,7 @@ namespace BattleShipAPI.Hubs
                         break;
                 }
 
-                await Clients.Group(connection.Room.GameRoomString).SendAsync("BoardGenerated", gameRoom, gameBoard);
+                await Clients.Group(connection.GameRoom.GameRoomName).SendAsync("BoardGenerated", gameRoom, gameBoard);
             }
         }
     }
