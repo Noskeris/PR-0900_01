@@ -51,13 +51,13 @@ namespace BattleShipAPI.Hubs
         {
             if (_db.connections.TryGetValue(Context.ConnectionId, out UserConnection connection))
             {
-                var gameRoom = connection.GameRoom.GameRoomName;
+                var gameRoomName = connection.GameRoom.GameRoomName;
 
-                var userCountInSameGameRoom = _db.connections.Values.Count(c => c.GameRoom.GameRoomName == gameRoom);
+                var userCountInSameGameRoom = _db.connections.Values.Count(c => c.GameRoom.GameRoomName == gameRoomName);
 
                 Board? gameBoard = null;
 
-                var players = _db.connections.Values.Where(c => c.GameRoom.GameRoomName == gameRoom).ToList();
+                var players = _db.connections.Values.Where(c => c.GameRoom.GameRoomName == gameRoomName).ToList();
 
                 if (players.Count == 0)
                     return;
@@ -104,7 +104,20 @@ namespace BattleShipAPI.Hubs
                         break;
                 }
 
-                await Clients.Group(connection.GameRoom.GameRoomName).SendAsync("BoardGenerated", gameRoom, gameBoard);
+                connection.GameRoom.GameState = Enums.GameState.PlacingShips;
+                Console.WriteLine($"Game state changed to: {connection.GameRoom.GameState}");
+                await Clients.Group(gameRoomName).SendAsync("GameStateChanged", (int)connection.GameRoom.GameState);
+                await Clients.Group(gameRoomName).SendAsync("BoardGenerated", gameRoomName, gameBoard);
+            }
+        }
+
+        public async Task StartGame()
+        {
+            if (_db.connections.TryGetValue(Context.ConnectionId, out UserConnection connection))
+            {
+                connection.GameRoom.GameState = Enums.GameState.InProgress;
+                Console.WriteLine($"Game state changed to: {connection.GameRoom.GameState}");
+                await Clients.Group(connection.GameRoom.GameRoomName).SendAsync("GameStateChanged", (int)connection.GameRoom.GameState);
             }
         }
     }

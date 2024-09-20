@@ -3,7 +3,7 @@
     public enum GameState
     {
         NotStarted,
-        InProgress,
-        PlacingShips
+        PlacingShips,
+        InProgress
     }
 }

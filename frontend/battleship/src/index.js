@@ -1,81 +1,73 @@
 import React, { useState } from "react";
-import ReactDOM from "react-dom/client"; // Update the import for ReactDOM
-import { WelcomeScreen } from "./WelcomeScreen";
-import { Game } from "./Game/Game.js";
+import ReactDOM from "react-dom/client";
 import { Header } from "./Header";
-
-import "./css/style.css";
 import WaitingRoom from "./components/WaitingRoom.js";
 import { HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
 import GameRoom from "./components/GameRoom.js";
+import "./css/style.css";
 
 export const App = () => {
-  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  //FIRST IMPLEMENETATION OF GAME
-  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-  // const [appState, setAppState] = useState('welcome'); // play or welcome
-
-  // const startPlay = () => {
-  //   setAppState('play');
-  // };
-
-  // // Renders either Welcome Screen or Game
-  // return (
-  //   <>
-  //     <Header />
-  //     {appState === 'play' ? <Game /> : <WelcomeScreen startPlay={startPlay} />}
-  //   </>
-  // );
-
-  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // current implementation of signalr still in progress
-  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
   const [connection, setConnection] = useState();
   const [messages, setMessages] = useState([]);
   const [isModerator, setIsModerator] = useState(false);
   const [board, setBoard] = useState(null);
   const [username, setUsername] = useState("");
   const [playerId, setPlayerId] = useState();
+  const [gameState, setGameState] = useState(0);
 
-  const joinGameRoom = async (username, gameRoom) => {
+  const joinGameRoom = async (usernameInput, gameRoomName) => {
     try {
-      const connection = new HubConnectionBuilder()
+      const newConnection = new HubConnectionBuilder()
         .withUrl("https://localhost:7085/game")
         .configureLogging(LogLevel.Information)
         .build();
 
-      connection.on("JoinSpecificGameRoom", (username, msg) => {
-        setMessages((messages) => [...messages, { username, msg }]);
+      newConnection.on("JoinSpecificGameRoom", (username, msg) => {
+        setMessages((prevMessages) => [...prevMessages, { username, msg }]);
         console.log("msg: ", msg);
       });
 
-      connection.on("RecieveSpecificMessage", (username, msg) => {
-        setMessages((messages) => [...messages, { username, msg }]);
+      newConnection.on("RecieveSpecificMessage", (username, msg) => {
+        setMessages((prevMessages) => [...prevMessages, { username, msg }]);
         console.log(msg);
       });
 
-      connection.on("SetModerator", (isModerator) => {
+      newConnection.on("SetModerator", (isModerator) => {
         setIsModerator(isModerator);
       });
 
-      connection.on("BoardGenerated", (gameRoom, generatedBoard) => {
+      newConnection.on("BoardGenerated", (gameRoom, generatedBoard) => {
         setBoard(generatedBoard);
         console.log("Board received:", generatedBoard);
       });
 
-      connection.on("RecievePlayerId", (playerId) => {
+      newConnection.on("RecievePlayerId", (playerId) => {
         setPlayerId(playerId);
       });
 
-      await connection.start();
-      await connection.invoke("JoinSpecificGameRoom", { username, gameRoom });
+      newConnection.on("GameStateChanged", (newGameState) => {
+        console.log("Game state changed to:", newGameState);
+        setGameState(newGameState);
+      });
 
-      setConnection(connection);
-      setUsername(username);
+      await newConnection.start();
+
+      const gameRoom = {
+        GameRoomName: gameRoomName,
+        GameState: 0,
+      };
+
+      const userConnection = {
+        Username: usernameInput,
+        GameRoom: gameRoom,
+      };
+
+      await newConnection.invoke("JoinSpecificGameRoom", userConnection);
+
+      setConnection(newConnection);
+      setUsername(usernameInput);
     } catch (error) {
-      console.log(error);
+      console.log("Connection error: ", error);
     }
   };
 
@@ -84,15 +76,24 @@ export const App = () => {
       await connection.invoke("GenerateBoard");
       console.log("UI generate board");
     } catch (error) {
-      console.log(error);
+      console.log("Generate board error: ", error);
+    }
+  };
+
+  const startGame = async () => {
+    try {
+      await connection.invoke("StartGame");
+      console.log("StartGame invoked");
+    } catch (error) {
+      console.log("Error starting game:", error);
     }
   };
 
   return (
     <>
-      <div>Hello !!!!!</div>
+      <Header />
       {!connection ? (
-        <WaitingRoom joinGameRoom={joinGameRoom}></WaitingRoom>
+        <WaitingRoom joinGameRoom={joinGameRoom} />
       ) : (
         <GameRoom
           messages={messages}
@@ -101,6 +102,8 @@ export const App = () => {
           board={board}
           username={username}
           playerId={playerId}
+          gameState={gameState}
+          startGame={startGame}
         />
       )}
     </>
