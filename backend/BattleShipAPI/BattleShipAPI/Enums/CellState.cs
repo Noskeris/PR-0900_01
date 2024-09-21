@@ -2,10 +2,10 @@
 {
     public enum CellState
     {
-        Empty,        
-        HasShip,      
-        DamagedShip, 
-        SunkenShip,   
-        Missed
+        Empty = 1,        
+        HasShip = 2,      
+        DamagedShip = 3, 
+        SunkenShip = 4,   
+        Missed = 5
     }
 }

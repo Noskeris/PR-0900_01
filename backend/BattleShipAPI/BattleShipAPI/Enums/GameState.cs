@@ -2,8 +2,8 @@
 {
     public enum GameState
     {
-        NotStarted,
-        PlacingShips,
-        InProgress
+        NotStarted = 1,
+        PlacingShips = 2,
+        InProgress = 3
     }
 }
