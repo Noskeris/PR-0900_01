@@ -185,6 +185,25 @@ namespace BattleShipAPI.Hubs
                 await Clients.Group(gameRoom.Name).SendAsync("BoardUpdated", gameRoom.Name, gameRoom.Board);
             }
         }
+        
+        public async Task SetPlayerToReady()
+        {
+            if (_db.Connections.TryGetValue(Context.ConnectionId, out var connection)
+                && _db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom)
+                && gameRoom.State == GameState.PlacingShips)
+            {
+                if (connection.GetAllowedShipsConfig(gameRoom.Settings.ShipsConfig).Any(x => x.Count != 0))
+                {
+                    await Clients.Caller.SendAsync("PlayerNotReady", "You have not placed all your ships.");
+                    return;
+                }
+                
+                connection.IsReady = true;
+                _db.Connections[Context.ConnectionId] = connection;
+                
+                await Clients.Caller.SendAsync("PlayerReady", "You are ready to start the game.");
+            }
+        }
 
         public async Task StartGame()
         {
@@ -193,7 +212,13 @@ namespace BattleShipAPI.Hubs
                 && gameRoom.State == GameState.PlacingShips
                 && connection.IsModerator)
             {
-                // check if all players have placed their ships
+                var players = _db.Connections.Values.Where(c => c.GameRoomName == connection.GameRoomName).ToList();
+                
+                if (players.Any(x => !x.IsReady))
+                {
+                    await Clients.Caller.SendAsync("FailedToStartGame", "Not all players are ready.");
+                    return;
+                }
                 
                 gameRoom.State = GameState.InProgress;
                 

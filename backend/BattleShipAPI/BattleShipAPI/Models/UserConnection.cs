@@ -7,6 +7,8 @@
         public string GameRoomName { get; set; } = string.Empty;
         public bool IsModerator { get; set; } = false;
         
+        public bool IsReady { get; set; } = false;
+        
         public List<PlacedShip> PlacedShips { get; set; } = new();
         
         public List<ShipConfig> GetAllowedShipsConfig(List<ShipConfig> shipsConfig)
