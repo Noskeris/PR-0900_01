@@ -260,7 +260,11 @@ namespace BattleShipAPI.Hubs
                 {
                     var cellOwner = players.First(p => p.PlayerId == cell.OwnerId);
                     
-                    if (gameRoom.TryFullySinkShip(x, y, cellOwner))
+                    if (!gameRoom.TryFullySinkShip(x, y, cellOwner))
+                    {
+                        await Clients.Group(gameRoom.Name).SendAsync("AttackResult", $"{connection.Username} hit the ship!");
+                    }
+                    else
                     {
                         await Clients.Group(gameRoom.Name).SendAsync("AttackResult", $"{connection.Username} sunk the ship!");
 
@@ -281,11 +285,6 @@ namespace BattleShipAPI.Hubs
                             await Clients.Group(gameRoom.Name).SendAsync("AttackResult", $"{connection.Username} won the game!");
                             await Clients.Group(gameRoom.Name).SendAsync("GameStateChanged", (int)gameRoom.State);
                         }
-                    }
-                    else
-                    {
-                        cell.State = CellState.DamagedShip;
-                        await Clients.Group(gameRoom.Name).SendAsync("AttackResult", $"{connection.Username} hit the ship!");
                     }
 
                     await Clients.Group(gameRoom.Name).SendAsync("BoardUpdated", gameRoom.Name, gameRoom.Board);

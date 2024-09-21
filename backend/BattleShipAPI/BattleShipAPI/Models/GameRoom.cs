@@ -43,13 +43,23 @@ namespace BattleShipAPI.Models
             {
                 return false;
             }
+            
+            attackedCell.State = CellState.DamagedShip;
 
             var ship = player.PlacedShips
                 .First(s => s.StartX <= x && s.EndX >= x && s.StartY <= y && s.EndY >= y);
+            
+            var isShipFullyDamaged = Board.Cells
+                .SelectMany(c => c)
+                .Where(c => c.OwnerId == player.PlayerId && c.State == CellState.HasShip)
+                .All(c => c.State == CellState.DamagedShip);
 
-            Board.SinkShip(ship);
+            if (isShipFullyDamaged)
+            {
+                Board.SinkShip(ship);
+            }
 
-            return true;
+            return isShipFullyDamaged;
         }
 
         public bool HasAliveShips(UserConnection cellOwner)
