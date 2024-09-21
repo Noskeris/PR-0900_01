@@ -4,7 +4,7 @@
     {
         public Guid PlayerId { get; set; }
         public string Username { get; set; } = string.Empty;
-        public GameRoom GameRoom { get; set; } = null!;
+        public string GameRoomName { get; set; } = string.Empty;
         public bool IsModerator { get; set; } = false;
     }
 }
