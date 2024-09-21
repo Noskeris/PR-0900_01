@@ -3,11 +3,14 @@
     public class UserConnection
     {
         public Guid PlayerId { get; set; }
-        public string Username { get; set; } = string.Empty;
-        public string GameRoomName { get; set; } = string.Empty;
-        public bool IsModerator { get; set; } = false;
         
-        public bool IsReady { get; set; } = false;
+        public string Username { get; set; } = string.Empty;
+        
+        public string GameRoomName { get; set; } = string.Empty;
+        
+        public bool IsModerator { get; set; }
+        
+        public bool IsReady { get; set; }
         
         public List<PlacedShip> PlacedShips { get; set; } = new();
         

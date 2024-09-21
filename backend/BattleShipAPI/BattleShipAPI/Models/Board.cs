@@ -5,8 +5,11 @@ namespace BattleShipAPI.Models
     public class Board
     {
         public int XLength { get; set; }
+        
         public int YLength { get; set; }
+        
         public Cell[][] Cells { get; set; }
+        
 
         public Board()
         {
