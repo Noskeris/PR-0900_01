@@ -4,7 +4,7 @@ namespace BattleShipAPI.Models;
 
 public class GameRoomSettings
 {
-    public List<ShipConfig> ShipConfigs { get; set; } =
+    public List<ShipConfig> ShipsConfig { get; set; } =
     [
         new ShipConfig() { ShipType = ShipType.Battleship, Count = 1 },
         new ShipConfig() { ShipType = ShipType.Destroyer, Count = 1 },

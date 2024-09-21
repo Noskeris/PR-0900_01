@@ -45,5 +45,25 @@ namespace BattleShipAPI.Models
                 }
             }
         }
+        
+        public bool TryPutShipOnBoard(int xStart, int yStart, int xEnd, int yEnd, Guid ownerId)
+        {
+            for (int x = xStart; x <= xEnd; x++)
+            {
+                for (int y = yStart; y <= yEnd; y++)
+                {
+                    if (Cells[x][y].OwnerId == ownerId)
+                    {
+                        Cells[x][y].State = CellState.HasShip;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
     }
 }
