@@ -33,7 +33,6 @@ namespace BattleShipAPI.Models
                 for (int y = 0; y < YLength; y++)
                 {
                     Cells[x][y] = new Cell();
-                    //Cells[x][y].State = CellState.Empty;
                 }
             }
         }
@@ -67,6 +66,17 @@ namespace BattleShipAPI.Models
             }
 
             return true;
+        }
+        
+        public void SinkShip(PlacedShip ship)
+        {
+            for (int x = ship.StartX; x <= ship.EndX; x++)
+            {
+                for (int y = ship.StartY; y <= ship.EndY; y++)
+                {
+                  Cells[x][y].State = CellState.SunkenShip;
+                }
+            }
         }
     }
 }

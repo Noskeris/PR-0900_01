@@ -10,7 +10,7 @@
         
         public bool IsModerator { get; set; }
         
-        public bool IsReady { get; set; }
+        public bool CanPlay { get; set; }
         
         public List<PlacedShip> PlacedShips { get; set; } = new();
         
