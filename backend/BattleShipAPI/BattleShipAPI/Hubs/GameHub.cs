@@ -44,7 +44,7 @@ namespace BattleShipAPI.Hubs
 
             await Clients.Caller.SendAsync("RecievePlayerId", connection.PlayerId);
 
-            await Clients.Group(connection.Room.GameRoomString).SendAsync("JoinSpecificGameRoom", "admin", $"{connection.Username} has joined the game room {connection.GameRoom}");
+            await Clients.Group(connection.GameRoom.GameRoomName).SendAsync("JoinSpecificGameRoom", "admin", $"{connection.Username} has joined the game room {connection.GameRoom}");
         }
 
         public async Task GenerateBoard()
@@ -94,9 +94,9 @@ namespace BattleShipAPI.Hubs
                         var player4of4 = players[3];
 
                         gameBoard.AssignBoardSection(0, 0, 9, 9, player1of4.PlayerId);
-                        gameBoard.AssignBoardSection(0, 9, 9, 19, player2of4.PlayerId);
-                        gameBoard.AssignBoardSection(9, 0, 19, 9, player3of4.PlayerId);
-                        gameBoard.AssignBoardSection(9, 9, 19, 19, player4of4.PlayerId);
+                        gameBoard.AssignBoardSection(0, 10, 9, 19, player2of4.PlayerId);
+                        gameBoard.AssignBoardSection(10, 0, 19, 9, player3of4.PlayerId);
+                        gameBoard.AssignBoardSection(10, 10, 19, 19, player4of4.PlayerId);
 
                         break;
 
