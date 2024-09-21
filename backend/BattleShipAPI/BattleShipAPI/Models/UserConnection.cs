@@ -2,9 +2,9 @@
 {
     public class UserConnection
     {
-        public int PlayerId { get; set; }
+        public Guid PlayerId { get; set; }
         public string Username { get; set; } = string.Empty;
-        public GameRoom GameRoom { get; set; } 
+        public GameRoom GameRoom { get; set; } = null!;
         public bool IsModerator { get; set; } = false;
     }
 }

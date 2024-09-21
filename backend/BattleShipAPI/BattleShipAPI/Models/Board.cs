@@ -30,7 +30,7 @@ namespace BattleShipAPI.Models
             }
         }
 
-        public void AssignBoardSection(int xStart, int yStart, int xEnd, int yEnd, int ownerId)
+        public void AssignBoardSection(int xStart, int yStart, int xEnd, int yEnd, Guid ownerId)
         {
             for (int x = xStart; x <= xEnd; x++)
             {

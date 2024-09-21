@@ -21,19 +21,17 @@ namespace BattleShipAPI.Hubs
 
             var usersInRoom = _db.connections.Values.Where(c => c.GameRoom.GameRoomName == connection.GameRoom.GameRoomName).ToList();
 
-            connection.PlayerId = usersInRoom.Count + 1;
-
-            if (connection.PlayerId > 4)
+            if (usersInRoom.Count == 4)
             {
                 await Clients.Caller.SendAsync("JoinFailed", "Game room is full.");
                 return;
             }
 
+            connection.PlayerId = Guid.NewGuid();
+
             await Groups.AddToGroupAsync(Context.ConnectionId, connection.GameRoom.GameRoomName);
 
-            var isFirstUser = !_db.connections.Values.Any(c => c.GameRoom.GameRoomName == connection.GameRoom.GameRoomName);
-
-            if (isFirstUser)
+            if (usersInRoom.Count == 0)
             {
                 connection.IsModerator = true;
             }
@@ -41,15 +39,13 @@ namespace BattleShipAPI.Hubs
             _db.connections[Context.ConnectionId] = connection;
 
             await Clients.Caller.SendAsync("SetModerator", connection.IsModerator);
-
-            await Clients.Caller.SendAsync("RecievePlayerId", connection.PlayerId);
-
-            await Clients.Group(connection.GameRoom.GameRoomName).SendAsync("JoinSpecificGameRoom", "admin", $"{connection.Username} has joined the game room {connection.GameRoom}");
+            await Clients.Caller.SendAsync("ReceivePlayerId", connection.PlayerId);
+            await Clients.Group(connection.GameRoom.GameRoomName).SendAsync("JoinSpecificGameRoom", "admin", $"{connection.Username} has joined the game room {connection.GameRoom.GameRoomName}");
         }
 
         public async Task GenerateBoard()
         {
-            if (_db.connections.TryGetValue(Context.ConnectionId, out UserConnection connection))
+            if (_db.connections.TryGetValue(Context.ConnectionId, out var connection))
             {
                 var gameRoomName = connection.GameRoom.GameRoomName;
 
@@ -99,9 +95,6 @@ namespace BattleShipAPI.Hubs
                         gameBoard.AssignBoardSection(10, 10, 19, 19, player4of4.PlayerId);
 
                         break;
-
-                    default:
-                        break;
                 }
 
                 connection.GameRoom.GameState = Enums.GameState.PlacingShips;
@@ -109,6 +102,11 @@ namespace BattleShipAPI.Hubs
                 await Clients.Group(gameRoomName).SendAsync("GameStateChanged", (int)connection.GameRoom.GameState);
                 await Clients.Group(gameRoomName).SendAsync("BoardGenerated", gameRoomName, gameBoard);
             }
+        }
+
+        public async Task SetGameRoomSettings()
+        {
+            
         }
 
         public async Task StartGame()
