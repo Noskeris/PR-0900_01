@@ -226,6 +226,7 @@ namespace BattleShipAPI.Hubs
                 
                 Console.WriteLine($"Game state changed to: {gameRoom.State}");
                 await Clients.Group(gameRoom.Name).SendAsync("GameStateChanged", (int)gameRoom.State);
+                await Clients.Group(gameRoom.Name).SendAsync("PlayerTurn", gameRoom.GetNextTurnPlayerId(players));
             }
         }
     }
