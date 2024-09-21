@@ -14,13 +14,15 @@ namespace BattleShipAPI.Hubs
 
         public async Task JoinSpecificGameRoom(UserConnection connection)
         {
-            if (_db.Connections.Values.Any(c => c.GameRoomName == connection.GameRoomName && c.Username == connection.Username))
+            if (_db.Connections.Values.Any(c =>
+                    c.GameRoomName == connection.GameRoomName && c.Username == connection.Username))
             {
                 await Clients.Caller.SendAsync("JoinFailed", "Username already taken in this room");
                 return;
             }
-            
-            if (_db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom) && gameRoom.State != GameState.NotStarted)
+
+            if (_db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom) &&
+                gameRoom.State != GameState.NotStarted)
             {
                 await Clients.Caller.SendAsync("JoinFailed", "Game has already started.");
                 return;
@@ -41,7 +43,7 @@ namespace BattleShipAPI.Hubs
             if (usersInRoom.Count == 0)
             {
                 connection.IsModerator = true;
-                _db.GameRooms[connection.GameRoomName] = new GameRoom();
+                _db.GameRooms[connection.GameRoomName] = new GameRoom() {Name = connection.GameRoomName};
                 await Clients.Caller.SendAsync("AvailableShipsForConfiguration", new List<Ship>()
                 {
                     new() { ShipType = ShipType.Carrier, Size = 5 },
@@ -56,7 +58,8 @@ namespace BattleShipAPI.Hubs
 
             await Clients.Caller.SendAsync("SetModerator", connection.IsModerator);
             await Clients.Caller.SendAsync("ReceivePlayerId", connection.PlayerId);
-            await Clients.Group(connection.GameRoomName).SendAsync("JoinSpecificGameRoom", "admin", $"{connection.Username} has joined the game room {connection.GameRoomName}");
+            await Clients.Group(connection.GameRoomName).SendAsync("JoinSpecificGameRoom", "admin",
+                $"{connection.Username} has joined the game room {connection.GameRoomName}");
         }
 
         public async Task GenerateBoard()
@@ -82,7 +85,7 @@ namespace BattleShipAPI.Hubs
 
                         gameBoard.AssignBoardSection(0, 0, 9, 9, player1Of2.PlayerId);
                         gameBoard.AssignBoardSection(10, 0, 19, 9, player2Of2.PlayerId);
-                        
+
                         gameRoom.Board = gameBoard;
                         break;
 
@@ -95,7 +98,7 @@ namespace BattleShipAPI.Hubs
                         gameBoard.AssignBoardSection(0, 0, 9, 9, player1Of3.PlayerId);
                         gameBoard.AssignBoardSection(10, 0, 19, 9, player2Of3.PlayerId);
                         gameBoard.AssignBoardSection(20, 0, 29, 9, player3Of3.PlayerId);
-                        
+
                         gameRoom.Board = gameBoard;
                         break;
 
@@ -110,17 +113,17 @@ namespace BattleShipAPI.Hubs
                         gameBoard.AssignBoardSection(0, 10, 9, 19, player2Of4.PlayerId);
                         gameBoard.AssignBoardSection(10, 0, 19, 9, player3Of4.PlayerId);
                         gameBoard.AssignBoardSection(10, 10, 19, 19, player4Of4.PlayerId);
-                        
+
                         gameRoom.Board = gameBoard;
                         break;
-                    
+
                     default:
                         return;
                 }
-                
+
                 gameRoom.State = GameState.PlacingShips;
                 _db.GameRooms[gameRoom.Name] = gameRoom;
-                
+
                 Console.WriteLine($"Game state changed to: {gameRoom.State}");
                 await Clients.Group(gameRoom.Name).SendAsync("GameStateChanged", (int)gameRoom.State);
                 await Clients.Group(gameRoom.Name).SendAsync("BoardGenerated", gameRoom.Name, gameRoom.Board);
@@ -137,7 +140,7 @@ namespace BattleShipAPI.Hubs
             {
                 gameRoom.Settings = roomSettings;
                 _db.GameRooms[connection.GameRoomName] = gameRoom;
-                
+
                 await Clients.Caller.SendAsync("GameSettingsSaved", "Game settings saved successfully.");
             }
         }
@@ -152,19 +155,19 @@ namespace BattleShipAPI.Hubs
                 var player = _db.Connections[Context.ConnectionId];
                 var shipConfig = gameRoom.Settings.ShipsConfig
                     .FirstOrDefault(x => x.ShipType == placedShip.ShipType);
-                
+
                 if (shipConfig == null)
                 {
                     await Clients.Caller.SendAsync("FailedToAddShip", "This ship is not part of the game.");
                     return;
                 }
-                
+
                 if (player.PlacedShips.Count(x => x.ShipType == placedShip.ShipType) == shipConfig.Count)
                 {
                     await Clients.Caller.SendAsync("FailedToAddShip", "No ships of this type left.");
                     return;
                 }
-                
+
                 if (!board.TryPutShipOnBoard(
                         placedShip.StartX,
                         placedShip.StartY,
@@ -175,17 +178,18 @@ namespace BattleShipAPI.Hubs
                     await Clients.Caller.SendAsync("FailedToAddShip", "Failed to add ship to board. Please try again.");
                     return;
                 }
-                
+
                 player.PlacedShips.Add(placedShip);
                 gameRoom.Board = board;
                 _db.GameRooms[gameRoom.Name] = gameRoom;
                 _db.Connections[Context.ConnectionId] = player;
-                
-                await Clients.Caller.SendAsync("UpdatedShipsConfig", player.GetAllowedShipsConfig(gameRoom.Settings.ShipsConfig));
+
+                await Clients.Caller.SendAsync("UpdatedShipsConfig",
+                    player.GetAllowedShipsConfig(gameRoom.Settings.ShipsConfig));
                 await Clients.Group(gameRoom.Name).SendAsync("BoardUpdated", gameRoom.Name, gameRoom.Board);
             }
         }
-        
+
         public async Task SetPlayerToReady()
         {
             if (_db.Connections.TryGetValue(Context.ConnectionId, out var connection)
@@ -197,35 +201,86 @@ namespace BattleShipAPI.Hubs
                     await Clients.Caller.SendAsync("PlayerNotReady", "You have not placed all your ships.");
                     return;
                 }
-                
+
                 connection.IsReady = true;
                 _db.Connections[Context.ConnectionId] = connection;
-                
+
                 await Clients.Caller.SendAsync("PlayerReady", "You are ready to start the game.");
             }
         }
 
         public async Task StartGame()
         {
-            if (_db.Connections.TryGetValue(Context.ConnectionId, out var connection) 
+            if (_db.Connections.TryGetValue(Context.ConnectionId, out var connection)
                 && _db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom)
                 && gameRoom.State == GameState.PlacingShips
                 && connection.IsModerator)
             {
                 var players = _db.Connections.Values.Where(c => c.GameRoomName == connection.GameRoomName).ToList();
-                
+
                 if (players.Any(x => !x.IsReady))
                 {
                     await Clients.Caller.SendAsync("FailedToStartGame", "Not all players are ready.");
                     return;
                 }
-                
+
                 gameRoom.State = GameState.InProgress;
-                
+
                 _db.GameRooms[connection.GameRoomName] = gameRoom;
-                
+
                 Console.WriteLine($"Game state changed to: {gameRoom.State}");
                 await Clients.Group(gameRoom.Name).SendAsync("GameStateChanged", (int)gameRoom.State);
+                await Clients.Group(gameRoom.Name).SendAsync("PlayerTurn", gameRoom.GetNextTurnPlayerId(players));
+            }
+        }
+
+        public async Task AttackCell(int x, int y)
+        {
+            if (_db.Connections.TryGetValue(Context.ConnectionId, out var connection)
+                && _db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom)
+                && gameRoom.State == GameState.InProgress
+                && gameRoom.TurnPlayerId == connection.PlayerId)
+            {
+                var players = _db.Connections.Values.Where(c => c.GameRoomName == connection.GameRoomName).ToList();
+                var cell = gameRoom.Board.Cells[x][y];
+
+                if (cell.OwnerId == connection.PlayerId)
+                {
+                    await Clients.Caller.SendAsync("FailedToAttackCell", "You cannot attack your own territory.");
+                    return;
+                }
+
+                if (cell.State != CellState.Empty)
+                {
+                    await Clients.Caller.SendAsync("FailedToAttackCell", "This territory has already been attacked.");
+                    return;
+                }
+
+                if (cell.State == CellState.HasShip)
+                {
+                    if (gameRoom.TrySinkShip(x, y))
+                    {
+                        await Clients.Group(gameRoom.Name).SendAsync("AttackResult", $"{connection.Username} hit a ship!");
+                    }
+                    else
+                    {
+                        cell.State = CellState.DamagedShip;
+                        await Clients.Group(gameRoom.Name).SendAsync("AttackResult", $"{connection.Username} hit a ship!");
+                    }
+                    
+                    _db.GameRooms[gameRoom.Name] = gameRoom;
+
+                    await Clients.Group(gameRoom.Name).SendAsync("BoardUpdated", gameRoom.Name, gameRoom.Board);
+                }
+                else
+                {
+                    cell.State = CellState.Missed;
+                    _db.GameRooms[gameRoom.Name] = gameRoom;
+
+                    await Clients.Group(gameRoom.Name).SendAsync("BoardUpdated", gameRoom.Name, gameRoom.Board);
+                    await Clients.Group(gameRoom.Name).SendAsync("AttackResult", $"{connection.Username} missed!");
+                }
+
                 await Clients.Group(gameRoom.Name).SendAsync("PlayerTurn", gameRoom.GetNextTurnPlayerId(players));
             }
         }

@@ -12,7 +12,7 @@ namespace BattleShipAPI.Models
         
         public Board Board { get; set; } = new();
         
-        private Guid TurnPlayerId { get; set; } = Guid.Empty;
+        public Guid TurnPlayerId { get; private set; } = Guid.Empty;
         
         public Guid GetNextTurnPlayerId(List<UserConnection> players)
         {
@@ -34,6 +34,11 @@ namespace BattleShipAPI.Models
             TurnPlayerId = sortedUsers[nextPlayerIndex].PlayerId;
             
             return TurnPlayerId;
+        }
+
+        public bool TrySinkShip(int x, int y)
+        {
+            throw new NotImplementedException();
         }
     }
 }
