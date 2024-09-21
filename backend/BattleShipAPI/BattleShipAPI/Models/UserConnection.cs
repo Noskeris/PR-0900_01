@@ -2,7 +2,7 @@
 {
     public class UserConnection
     {
-        public Guid PlayerId { get; set; }
+        public string PlayerId { get; set; } = string.Empty;
         
         public string Username { get; set; } = string.Empty;
         
@@ -11,6 +11,8 @@
         public bool IsModerator { get; set; }
         
         public bool CanPlay { get; set; }
+        
+        public bool HasDisconnected { get; set; }
         
         public List<PlacedShip> PlacedShips { get; set; } = new();
         

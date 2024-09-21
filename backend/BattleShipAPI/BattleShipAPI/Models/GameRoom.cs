@@ -12,15 +12,15 @@ namespace BattleShipAPI.Models
 
         public Board Board { get; set; } = new();
 
-        public Guid TurnPlayerId { get; private set; } = Guid.Empty;
+        public string TurnPlayerId { get; private set; } = string.Empty;
 
-        public Guid GetNextTurnPlayerId(List<UserConnection> players)
+        public string GetNextTurnPlayerId(List<UserConnection> players)
         {
             var filteredPlayers = players
                 .Where(x => x.CanPlay)
                 .OrderBy(x => x.Username);
 
-            if (TurnPlayerId == Guid.Empty)
+            if (TurnPlayerId == string.Empty)
             {
                 TurnPlayerId = filteredPlayers.First().PlayerId;
                 return TurnPlayerId;
@@ -66,6 +66,11 @@ namespace BattleShipAPI.Models
         {
             return cellOwner.PlacedShips
                 .Any(s => Board.Cells[s.StartX][s.StartY].State != CellState.SunkenShip);
+        }
+
+        public void SinkAllShips(UserConnection player)
+        {
+            player.PlacedShips.ForEach(ship => Board.SinkShip(ship));
         }
     }
 }

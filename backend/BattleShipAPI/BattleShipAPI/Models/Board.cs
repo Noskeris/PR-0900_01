@@ -37,7 +37,7 @@ namespace BattleShipAPI.Models
             }
         }
 
-        public void AssignBoardSection(int xStart, int yStart, int xEnd, int yEnd, Guid ownerId)
+        public void AssignBoardSection(int xStart, int yStart, int xEnd, int yEnd, string ownerId)
         {
             for (int x = xStart; x <= xEnd; x++)
             {
@@ -48,7 +48,7 @@ namespace BattleShipAPI.Models
             }
         }
         
-        public bool TryPutShipOnBoard(int xStart, int yStart, int xEnd, int yEnd, Guid ownerId)
+        public bool TryPutShipOnBoard(int xStart, int yStart, int xEnd, int yEnd, string ownerId)
         {
             for (int x = xStart; x <= xEnd; x++)
             {
