@@ -256,7 +256,7 @@ namespace BattleShipAPI.Hubs
                     return;
                 }
 
-                if (cell.State != CellState.Empty)
+                if (cell.State == CellState.DamagedShip || cell.State == CellState.SunkenShip || cell.State == CellState.Missed)
                 {
                     await Clients.Caller.SendAsync("FailedToAttackCell", "This territory has already been attacked.");
                     return;

@@ -48,11 +48,25 @@ namespace BattleShipAPI.Models
 
             var ship = player.PlacedShips
                 .First(s => s.StartX <= x && s.EndX >= x && s.StartY <= y && s.EndY >= y);
-            
-            var isShipFullyDamaged = Board.Cells
-                .SelectMany(c => c)
-                .Where(c => c.OwnerId == player.PlayerId && c.State == CellState.HasShip)
-                .All(c => c.State == CellState.DamagedShip);
+
+            var isShipFullyDamaged = true;
+
+            if (ship != null) // Ensure the ship is found
+            {
+                for (int i = ship.StartX; i <= ship.EndX; i++)
+                {
+                    for (int j = ship.StartY; j <= ship.EndY; j++)
+                    {
+                        if (Board.Cells[i][j].OwnerId == player.PlayerId &&
+                            Board.Cells[i][j].State != CellState.DamagedShip)
+                        {
+                            isShipFullyDamaged = false;
+                            break;
+                        }
+                    }
+                    if (!isShipFullyDamaged) break;
+                }
+            }
 
             if (isShipFullyDamaged)
             {

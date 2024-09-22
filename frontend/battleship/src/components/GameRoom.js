@@ -18,7 +18,8 @@ const GameRoom = ({
   shipsToPlace,
   addShip,
   playerReady,
-  playerTurn
+  playerTurn,
+  attackCell
 }) => {
   const [currentlyPlacing, setCurrentlyPlacing] = useState(null);
   const [availableShips, setAvailableShips] = useState(shipsToPlace);
@@ -121,6 +122,7 @@ const GameRoom = ({
               gameState={gameState}
               placeShip={placeShip}
               playerTurn={playerTurn}
+              attackCell={attackCell}
             />
           ) : (
             <Typography>Waiting for board generation...</Typography>

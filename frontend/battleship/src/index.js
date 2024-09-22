@@ -74,6 +74,13 @@ export const App = () => {
         setPlayerTurn(playerId);
       })
 
+      newConnection.on("FailedToAttackCell", (message) => {
+        console.log("FailedToAttackCell", message);
+      })
+
+      newConnection.on("AttackResult", (message) => {
+        console.log("AttackResult:", message);
+      })
 
       newConnection.on("AvailableShipsForConfiguration", (shipConfig) => {
         //TODO LATER
@@ -154,6 +161,15 @@ export const App = () => {
     }
   }
 
+  const attackCell = async (x, y) => {
+    try {
+      await connection.invoke("AttackCell", x, y);
+      console.log("attackCell invoked");
+    } catch (error) {
+      console.log("Error attackCell", error);
+    }
+  }
+
 
   return (
     <>
@@ -175,6 +191,7 @@ export const App = () => {
           addShip={addShip}
           playerReady={playerReady}
           playerTurn={playerTurn}
+          attackCell = {attackCell}
         />
       )}
     </>

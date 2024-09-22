@@ -19,6 +19,7 @@ const BoardComponent = ({
   gameState,
   placeShip,
   playerTurn,
+  attackCell
 }) => {
   const nameToShipTypeMapping = {
     carrier: 1,
@@ -70,11 +71,11 @@ const BoardComponent = ({
     switch (cell.state) {
       case "hoverOver":
         return "hoverOver";
-      case "DamagedShip":
+      case 3:
         return "damagedship";
-      case "Sunken":
+      case 4:
         return "sunken";
-      case "Missed":
+      case 5:
         return "missed";
       case "placingShip":
         return "placingShip";
@@ -110,7 +111,8 @@ const BoardComponent = ({
       }
     } else if( gameState === 3) {
         if(playerTurn === playerId){
-          console.log("attacking ", xIndex, yIndex)
+          console.log("attacking ", xIndex, yIndex);
+          attackCell(xIndex, yIndex);
         }
         else {
           console.log("cant attack now not your turn", xIndex, yIndex);
