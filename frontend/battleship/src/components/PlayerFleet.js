@@ -7,7 +7,10 @@ export const PlayerFleet = ({
   currentlyPlacing,
   readyToPlay,
 }) => {
-  let shipsLeft = availableShips?.map((ship) => ship.name);
+  let shipsLeft = availableShips
+  ?.slice() // Create a shallow copy of the array to avoid mutating the original array
+  .sort((a, b) => b.length - a.length) // Sort by length in descending order (largest to smallest)
+  .map((ship) => ship.name); // Map the sorted array to extract ship names
 
   let shipReplicaBoxes = shipsLeft?.map((shipName) => (
     <ReplicaBox
