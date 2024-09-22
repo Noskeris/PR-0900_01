@@ -5,7 +5,7 @@ export const PlayerFleet = ({
   availableShips,
   selectShip,
   currentlyPlacing,
-  readyToPlay,
+  playerReady,
 }) => {
   let shipsLeft = availableShips
   ?.slice() 
@@ -30,7 +30,7 @@ export const PlayerFleet = ({
 
   let playButton = (
     <div id="play-ready">
-      <button id="play-button" onClick={readyToPlay}>
+      <button id="play-button" onClick={playerReady}>
         Ready to play
       </button>
     </div>

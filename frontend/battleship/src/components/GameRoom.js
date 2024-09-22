@@ -16,7 +16,9 @@ const GameRoom = ({
   gameState,
   startGame,
   shipsToPlace,
-  addShip
+  addShip,
+  playerReady,
+  playerTurn
 }) => {
   const [currentlyPlacing, setCurrentlyPlacing] = useState(null);
   const [availableShips, setAvailableShips] = useState(shipsToPlace);
@@ -42,10 +44,6 @@ const GameRoom = ({
     );
 
     setCurrentlyPlacing(null);
-  };
-
-  const readyToPlay = () => {
-    console.log("ready to play", username);
   };
 
   const rotateShip = (event) => {
@@ -100,7 +98,7 @@ const GameRoom = ({
               availableShips={availableShips}
               selectShip={selectShip}
               currentlyPlacing={currentlyPlacing}
-              readyToPlay={readyToPlay}
+              playerReady={playerReady}
             />
           </>
         )}
@@ -122,6 +120,7 @@ const GameRoom = ({
               addShip={addShip}
               gameState={gameState}
               placeShip={placeShip}
+              playerTurn={playerTurn}
             />
           ) : (
             <Typography>Waiting for board generation...</Typography>

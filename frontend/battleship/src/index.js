@@ -22,6 +22,7 @@ export const App = () => {
   const [playerId, setPlayerId] = useState();
   const [gameState, setGameState] = useState(1);
   const [shipsToPlace, setShipsToPlace] = useState();
+  const [playerTurn, setPlayerTurn] = useState();
 
   const joinGameRoom = async (usernameInput, gameRoomName) => {
     try {
@@ -60,6 +61,19 @@ export const App = () => {
       newConnection.on("BoardUpdated", (gameRoomName, board) => {
         setBoard(board);
       });
+
+      newConnection.on("FailedToStartGame", (message) => {
+        console.log ("Failed to start game:", message);
+      });
+
+      newConnection.on("PlayerReady", (message) => {
+        console.log(message);
+      });
+
+      newConnection.on("PlayerTurn", (playerId) => {
+        setPlayerTurn(playerId);
+      })
+
 
       newConnection.on("AvailableShipsForConfiguration", (shipConfig) => {
         //TODO LATER
@@ -131,6 +145,15 @@ export const App = () => {
     }
   };
 
+  const playerReady = async () => {
+    try {
+      await connection.invoke("SetPlayerToReady");
+      console.log("SetPlayerToReady invoked");
+    } catch (error) {
+      console.log("Error SetPlayerToReady", error);
+    }
+  }
+
 
   return (
     <>
@@ -150,6 +173,8 @@ export const App = () => {
           startGame={startGame}
           shipsToPlace={shipsToPlace}
           addShip={addShip}
+          playerReady={playerReady}
+          playerTurn={playerTurn}
         />
       )}
     </>

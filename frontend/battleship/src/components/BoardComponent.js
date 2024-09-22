@@ -18,6 +18,7 @@ const BoardComponent = ({
   addShip,
   gameState,
   placeShip,
+  playerTurn,
 }) => {
   const nameToShipTypeMapping = {
     carrier: 1,
@@ -32,8 +33,10 @@ const BoardComponent = ({
 
   useEffect(() => {
     console.log("Board updated:", board);
-    setCells(board.cells);
-    setOriginalCells(board.cells);
+    const deepCopy = (arr) =>
+      arr.map((row) => row.map((cell) => ({ ...cell })));
+    setCells(deepCopy(board.cells));
+    setOriginalCells(deepCopy(board.cells));
   }, [board]);
 
   useEffect(() => {
@@ -55,16 +58,18 @@ const BoardComponent = ({
     let ownerColor = "defaultcell";
 
     if (cell.ownerId === playerId) {
-      if(cell.state === 2 && gameState === 2){
-        return ownerColor = "hasship";
+      if (cell.state === 2 && gameState === 2) {
+        return (ownerColor = "hasship");
       } else if (cell.state === 2) {
-        ownerColor = "hasship"
+        ownerColor = "hasship";
       } else {
         ownerColor = "purple";
       }
     }
 
     switch (cell.state) {
+      case "hoverOver":
+        return "hoverOver";
       case "DamagedShip":
         return "damagedship";
       case "Sunken":
@@ -81,65 +86,93 @@ const BoardComponent = ({
   };
 
   const handleCellClick = (xIndex, yIndex) => {
-    if (canBePlaced(playerId, currentlyPlacing, originalCells))
-    {
-      let endX = currentlyPlacing.position.x;
-      let endY = currentlyPlacing.position.y;
+    if (gameState === 2) {
+      if (canBePlaced(playerId, currentlyPlacing, originalCells)) {
+        let endX = currentlyPlacing.position.x;
+        let endY = currentlyPlacing.position.y;
 
-      if(currentlyPlacing.orientation === 'horizontal'){
-        endX = currentlyPlacing.position.x + currentlyPlacing.length - 1
-      } else if (currentlyPlacing.orientation === 'vertical') {
-        endY = currentlyPlacing.position.y + currentlyPlacing.length - 1
+        if (currentlyPlacing.orientation === "horizontal") {
+          endX = currentlyPlacing.position.x + currentlyPlacing.length - 1;
+        } else if (currentlyPlacing.orientation === "vertical") {
+          endY = currentlyPlacing.position.y + currentlyPlacing.length - 1;
+        }
+
+        const placedShip = {
+          shipType: nameToShipTypeMapping[currentlyPlacing.name],
+          startX: currentlyPlacing.position.x,
+          startY: currentlyPlacing.position.y,
+          endX: endX,
+          endY: endY,
+        };
+
+        addShip(placedShip);
+        placeShip(currentlyPlacing);
       }
-
-      const placedShip = {
-        shipType: nameToShipTypeMapping[currentlyPlacing.name],
-        startX: currentlyPlacing.position.x,
-        startY: currentlyPlacing.position.y,
-        endX: endX,
-        endY: endY
-      }
-
-      console.log(placedShip);
-      addShip(placedShip);
-      placeShip(currentlyPlacing);
+    } else if( gameState === 3) {
+        if(playerTurn === playerId){
+          console.log("attacking ", xIndex, yIndex)
+        }
+        else {
+          console.log("cant attack now not your turn", xIndex, yIndex);
+        }
     }
   };
 
   const handleMouseOver = (event) => {
     const [x, y] = event.target.id.split("-").map(Number);
-    if (currentlyPlacing) {
-      const newPosition = { x, y };
-      const newCurrentlyPlacing = {
-        ...currentlyPlacing,
-        position: newPosition,
-      };
+    if (gameState === 2) {
+      if (currentlyPlacing) {
+        const newPosition = { x, y };
+        const newCurrentlyPlacing = {
+          ...currentlyPlacing,
+          position: newPosition,
+        };
 
-      setCurrentlyPlacing(newCurrentlyPlacing);
+        setCurrentlyPlacing(newCurrentlyPlacing);
 
-      const updatedCells = cells.map((row) =>
-        row.map((cell) => {
-          if (cell.state === "placingShip" || cell.state === "forbidden") {
-            return { ...cell, state: 1 };
+        const updatedCells = cells.map((row) =>
+          row.map((cell) => {
+            if (cell.state === "placingShip" || cell.state === "forbidden") {
+              return { ...cell, state: 1 };
+            }
+            return cell;
+          })
+        );
+
+        if (updatedCells[x][y].ownerId === playerId) {
+          if (canBePlaced(playerId, newCurrentlyPlacing, originalCells)) {
+            setCells(
+              putEntityInLayout(
+                updatedCells,
+                newCurrentlyPlacing,
+                "placingShip"
+              )
+            );
+          } else {
+            let forbiddenShip = {
+              ...newCurrentlyPlacing,
+              length:
+                newCurrentlyPlacing.length -
+                calculateOverhang(newCurrentlyPlacing, cells, playerId),
+            };
+            setCells(
+              putEntityInLayout(updatedCells, forbiddenShip, "forbidden")
+            );
+          }
+        }
+      }
+    } else if (gameState === 3) {
+      const updatedCells = cells.map((row, yIndex) =>
+        row.map((cell, xIndex) => {
+          if (cell.state === "hoverOver") {
+            return { ...cell, state: originalCells[yIndex][xIndex].state };
           }
           return cell;
         })
       );
-
-      if (updatedCells[x][y].ownerId === playerId) {
-        if (canBePlaced(playerId, newCurrentlyPlacing, originalCells)) {
-          setCells(
-            putEntityInLayout(updatedCells, newCurrentlyPlacing, "placingShip")
-          );
-        } else {
-          let forbiddenShip = {
-            ...newCurrentlyPlacing,
-            length:
-              newCurrentlyPlacing.length -
-              calculateOverhang(newCurrentlyPlacing, cells, playerId),
-          };
-          setCells(putEntityInLayout(updatedCells, forbiddenShip, "forbidden"));
-        }
+      if (updatedCells[x][y].ownerId !== playerId) {
+        updatedCells[x][y].state = "hoverOver";
+        setCells(updatedCells);
       }
     }
   };
