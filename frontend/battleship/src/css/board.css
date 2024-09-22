@@ -78,7 +78,7 @@
 
 /* Sunk ship */
 
-.board .ship-sunk {
+.board .shipSunk {
   background-color: var(--oc-gray-9);
   border: 1px solid var(--oc-gray-8);
   animation: shake 50ms 6 alternate backwards;

@@ -5,13 +5,14 @@ export const PlayerFleet = ({
   availableShips,
   selectShip,
   currentlyPlacing,
-  startTurn,
-  startAgain,
+  playerReady,
 }) => {
-  let shipsLeft = availableShips.map((ship) => ship.name);
+  let shipsLeft = availableShips
+  ?.slice() 
+  .sort((a, b) => b.length - a.length)
+  .map((ship) => ship.name); 
 
-  // For every ship still available, return a Replica Box with the ship's name and as many squares as its length
-  let shipReplicaBoxes = shipsLeft.map((shipName) => (
+  let shipReplicaBoxes = shipsLeft?.map((shipName) => (
     <ReplicaBox
       selectShip={selectShip}
       key={shipName}
@@ -24,18 +25,13 @@ export const PlayerFleet = ({
   let fleet = (
     <div id="replica-fleet">
       {shipReplicaBoxes}
-      <p className="player-tip">Right click to rotate before you position.</p>
-      <p className="restart" onClick={startAgain}>
-        Restart
-      </p>
     </div>
   );
 
   let playButton = (
     <div id="play-ready">
-      <p className="player-tip">Ships are in formation.</p>
-      <button id="play-button" onClick={startTurn}>
-        Start game
+      <button id="play-button" onClick={playerReady}>
+        Ready to play
       </button>
     </div>
   );
@@ -43,7 +39,7 @@ export const PlayerFleet = ({
   return (
     <div id="available-ships">
       <div className="tip-box-title"> Your Ships</div>
-      {availableShips.length > 0 ? fleet : playButton}
+      {availableShips?.length > 0 ? fleet : playButton}
     </div>
   );
 };

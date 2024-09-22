@@ -1,20 +1,19 @@
 import { useFormik } from "formik";
-import * as Yup from "yup"; // For validation (optional)
+import * as Yup from "yup";
 import React from "react";
 
 const WaitingRoom = ({ joinGameRoom }) => {
-  // Set up Formik
   const formik = useFormik({
     initialValues: {
       username: "",
-      gameRoom: "",
+      gameRoomName: "",
     },
     validationSchema: Yup.object({
       username: Yup.string().required("Username is required"),
-      gameRoom: Yup.string().required("Game room is required"),
+      gameRoomName: Yup.string().required("Game room name is required"),
     }),
     onSubmit: (values) => {
-      joinGameRoom(values.username, values.gameRoom);
+      joinGameRoom(values.username, values.gameRoomName);
     },
   });
 
@@ -36,17 +35,17 @@ const WaitingRoom = ({ joinGameRoom }) => {
       </div>
 
       <div>
-        <label htmlFor="gameRoom">Game Room</label>
+        <label htmlFor="gameRoomName">Game Room Name</label>
         <input
-          id="gameRoom"
-          name="gameRoom"
+          id="gameRoomName"
+          name="gameRoomName"
           type="text"
           onChange={formik.handleChange}
           onBlur={formik.handleBlur}
-          value={formik.values.gameRoom}
+          value={formik.values.gameRoomName}
         />
-        {formik.touched.gameRoom && formik.errors.gameRoom ? (
-          <div>{formik.errors.gameRoom}</div>
+        {formik.touched.gameRoomName && formik.errors.gameRoomName ? (
+          <div>{formik.errors.gameRoomName}</div>
         ) : null}
       </div>
 

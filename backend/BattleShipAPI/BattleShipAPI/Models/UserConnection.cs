@@ -2,9 +2,27 @@
 {
     public class UserConnection
     {
-        public int PlayerId { get; set; }
+        public string PlayerId { get; set; } = string.Empty;
+        
         public string Username { get; set; } = string.Empty;
-        public string GameRoom { get; set; } = string.Empty;
-        public bool IsModerator { get; set; } = false;
+        
+        public string GameRoomName { get; set; } = string.Empty;
+        
+        public bool IsModerator { get; set; }
+        
+        public bool CanPlay { get; set; }
+        
+        public bool HasDisconnected { get; set; }
+        
+        public List<PlacedShip> PlacedShips { get; set; } = new();
+        
+        public List<ShipConfig> GetAllowedShipsConfig(List<ShipConfig> shipsConfig)
+        {
+            return shipsConfig.Select(shipConfig => new ShipConfig()
+            {
+                ShipType = shipConfig.ShipType,
+                Count = shipConfig.Count - PlacedShips.Count(x => x.ShipType == shipConfig.ShipType)
+            }).ToList();
+        }
     }
 }
