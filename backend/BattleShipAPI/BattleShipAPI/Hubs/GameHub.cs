@@ -125,9 +125,9 @@ namespace BattleShipAPI.Hubs
                 _db.GameRooms[gameRoom.Name] = gameRoom;
 
                 Console.WriteLine($"Game state changed to: {gameRoom.State}");
+                await Clients.Group(gameRoom.Name).SendAsync("UpdatedShipsConfig", gameRoom.Settings.ShipsConfig);
                 await Clients.Group(gameRoom.Name).SendAsync("GameStateChanged", (int)gameRoom.State);
                 await Clients.Group(gameRoom.Name).SendAsync("BoardGenerated", gameRoom.Name, gameRoom.Board);
-                await Clients.Group(gameRoom.Name).SendAsync("UpdatedShipsConfig", gameRoom.Settings.ShipsConfig);
             }
         }
 

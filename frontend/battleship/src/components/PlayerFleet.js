@@ -7,9 +7,9 @@ export const PlayerFleet = ({
   currentlyPlacing,
   readyToPlay,
 }) => {
-  let shipsLeft = availableShips.map((ship) => ship.name);
+  let shipsLeft = availableShips?.map((ship) => ship.name);
 
-  let shipReplicaBoxes = shipsLeft.map((shipName) => (
+  let shipReplicaBoxes = shipsLeft?.map((shipName) => (
     <ReplicaBox
       selectShip={selectShip}
       key={shipName}
@@ -36,7 +36,7 @@ export const PlayerFleet = ({
   return (
     <div id="available-ships">
       <div className="tip-box-title"> Your Ships</div>
-      {availableShips.length > 0 ? fleet : playButton}
+      {availableShips?.length > 0 ? fleet : playButton}
     </div>
   );
 };

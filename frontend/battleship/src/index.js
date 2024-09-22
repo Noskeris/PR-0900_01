@@ -7,6 +7,13 @@ import GameRoom from "./components/GameRoom.js";
 import "./css/style.css";
 
 export const App = () => {
+  const shipTypesMapping = {
+    1: { name: 'carrier', length: 5 },
+    2: { name: 'battleship', length: 4 },
+    3: { name: 'cruiser', length: 3 },
+    4: { name: 'submarine', length: 2 },
+    5: { name: 'destroyer', length: 1 },
+  };
   const [connection, setConnection] = useState();
   const [messages, setMessages] = useState([]);
   const [isModerator, setIsModerator] = useState(false);
@@ -14,6 +21,7 @@ export const App = () => {
   const [username, setUsername] = useState("");
   const [playerId, setPlayerId] = useState();
   const [gameState, setGameState] = useState(1);
+  const [shipsToPlace, setShipsToPlace] = useState();
 
   const joinGameRoom = async (usernameInput, gameRoomName) => {
     try {
@@ -47,6 +55,37 @@ export const App = () => {
       newConnection.on("GameStateChanged", (newGameState) => {
         console.log("Game state changed to:", newGameState);
         setGameState(newGameState);
+      });
+
+      newConnection.on("BoardUpdated", (gameRoomName, board) => {
+        setBoard(board);
+      });
+
+      newConnection.on("AvailableShipsForConfiguration", (shipConfig) => {
+        //TODO LATER
+      })
+
+      newConnection.on("UpdatedShipsConfig", (shipsConfig) => {
+        const mappedShips = shipsConfig
+        .map((ship) => {
+          const { name, length } = shipTypesMapping[ship.shipType];
+          
+          // Only return the ship object if count > 0
+          if (ship.count > 0) {
+            return {
+              name,
+              length,
+              placed: null,
+              count: ship.count,
+            };
+          }
+          
+          return null; // Return null if count is 0 or less
+        })
+        .filter(Boolean);
+        
+        setShipsToPlace(mappedShips);
+        console.log("shipsTOPlaceMapp", mappedShips)
       });
 
       await newConnection.start();
@@ -84,6 +123,16 @@ export const App = () => {
     }
   };
 
+  const addShip = async (placedShip) => {
+    try {
+      await connection.invoke("AddShip", placedShip);
+      console.log("AddShip invoked");
+    } catch (error) {
+      console.log("Error adding ship:", error);
+    }
+  };
+
+
   return (
     <>
       <Header />
@@ -100,6 +149,8 @@ export const App = () => {
           playerId={playerId}
           gameState={gameState}
           startGame={startGame}
+          shipsToPlace={shipsToPlace}
+          addShip={addShip}
         />
       )}
     </>

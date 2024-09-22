@@ -15,12 +15,27 @@ const BoardComponent = ({
   currentlyPlacing,
   setCurrentlyPlacing,
   rotateShip,
+  addShip,
+  gameState,
   placeShip,
   placedShips,
 }) => {
-  const originalCells = board.cells;
+  const nameToShipTypeMapping = {
+    carrier: 1,
+    battleship: 2,
+    cruiser: 3,
+    submarine: 4,
+    destroyer: 5,
+  };
+  const [originalCells, setOriginalCells] = useState(board.cells);
   const [cells, setCells] = useState(board.cells);
   const { xLength, yLength } = board;
+
+  useEffect(() => {
+    console.log("Board updated:", board);
+    setCells(board.cells);
+    setOriginalCells(board.cells);
+  }, [board]);
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -41,7 +56,13 @@ const BoardComponent = ({
     let ownerColor = "defaultcell";
 
     if (cell.ownerId === playerId) {
-      ownerColor = "purple";
+      if(cell.state === 2 && gameState === 2){
+        return ownerColor = "hasship";
+      } else if (cell.state === 2) {
+        ownerColor = "hasship"
+      } else {
+        ownerColor = "purple";
+      }
     }
 
     switch (cell.state) {
@@ -61,12 +82,33 @@ const BoardComponent = ({
   };
 
   const handleCellClick = (xIndex, yIndex) => {
-    console.log(`Clicked cell at position x: ${xIndex}, y: ${yIndex}`);
+    if (canBePlaced(playerId, currentlyPlacing, originalCells))
+    {
+      let endX = currentlyPlacing.position.x;
+      let endY = currentlyPlacing.position.y;
+
+      if(currentlyPlacing.orientation === 'horizontal'){
+        endX = currentlyPlacing.position.x + currentlyPlacing.length - 1
+      } else if (currentlyPlacing.orientation === 'vertical') {
+        endY = currentlyPlacing.position.y + currentlyPlacing.length - 1
+      }
+
+      const placedShip = {
+        shipType: nameToShipTypeMapping[currentlyPlacing.name],
+        startX: currentlyPlacing.position.x,
+        startY: currentlyPlacing.position.y,
+        endX: endX,
+        endY: endY
+      }
+
+      console.log(placedShip);
+      addShip(placedShip);
+      placeShip(currentlyPlacing);
+    }
   };
 
   const handleMouseOver = (event) => {
     const [x, y] = event.target.id.split("-").map(Number);
-    console.log(x, y);
     if (currentlyPlacing) {
       const newPosition = { x, y };
       const newCurrentlyPlacing = {

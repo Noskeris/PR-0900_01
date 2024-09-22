@@ -1,37 +1,9 @@
 import { Grid, Box, Typography, Button } from "@mui/material";
 import MessageContainer from "./MessageContainer";
 import BoardComponent from "./BoardComponent";
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { PlayerFleet } from "./PlayerFleet";
-
-const AVAILABLE_SHIPS = [
-  {
-    name: 'carrier',
-    length: 5,
-    placed: null,
-  },
-  {
-    name: 'battleship',
-    length: 4,
-    placed: null,
-  },
-  {
-    name: 'cruiser',
-    length: 3,
-    placed: null,
-  },
-  {
-    name: 'submarine',
-    length: 3,
-    placed: null,
-  },
-  {
-    name: 'destroyer',
-    length: 2,
-    placed: null,
-  },
-];
 
 const GameRoom = ({
   messages,
@@ -43,10 +15,16 @@ const GameRoom = ({
   playerId,
   gameState,
   startGame,
+  shipsToPlace,
+  addShip
 }) => {
   const [currentlyPlacing, setCurrentlyPlacing] = useState(null);
   const [placedShips, setPlacedShips] = useState([]);
-  const [availableShips, setAvailableShips] = useState(AVAILABLE_SHIPS);
+  const [availableShips, setAvailableShips] = useState(shipsToPlace);
+
+  useEffect(() => {
+    setAvailableShips(shipsToPlace)
+  }, [shipsToPlace])
 
   const selectShip = (shipName) => {
     let shipIdx = availableShips.findIndex((ship) => ship.name === shipName);
@@ -60,13 +38,13 @@ const GameRoom = ({
   };
 
   const placeShip = (currentlyPlacing) => {
-    setPlacedShips([
-      ...placedShips,
-      {
-        ...currentlyPlacing,
-        placed: true,
-      },
-    ]);
+    // setPlacedShips([
+    //   ...placedShips,
+    //   {
+    //     ...currentlyPlacing,
+    //     placed: true,
+    //   },
+    // ]);
 
     setAvailableShips((previousShips) =>
       previousShips.filter((ship) => ship.name !== currentlyPlacing.name)
@@ -147,10 +125,12 @@ const GameRoom = ({
               setBoard={setBoard}
               username={username}
               playerId={playerId}
-            
               currentlyPlacing={currentlyPlacing}
               setCurrentlyPlacing={setCurrentlyPlacing}
               rotateShip={rotateShip}
+              addShip={addShip}
+              gameState={gameState}
+
               placeShip={placeShip}
               placedShips={placedShips}
             />
