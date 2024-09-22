@@ -82,6 +82,14 @@ export const App = () => {
         console.log("AttackResult:", message);
       })
 
+      newConnection.on("WinnerResult", (username, msg) => {
+        setMessages((prevMessages) => [...prevMessages, { username, msg }]);
+      });
+      
+      newConnection.on("GameLostResult", (username, msg) => {
+        setMessages((prevMessages) => [...prevMessages, { username, msg }]);
+      });
+
       newConnection.on("AvailableShipsForConfiguration", (shipConfig) => {
         //TODO LATER
       })
@@ -142,6 +150,15 @@ export const App = () => {
       console.log("Error starting game:", error);
     }
   };
+  
+  const restartGame = async () => {
+    try {
+      await connection.invoke("RestartGame");
+      console.log("RestartGame invoked");
+    } catch (error) {
+      console.log("Error RestartGame :", error);
+    }
+  };
 
   const addShip = async (placedShip) => {
     try {
@@ -192,6 +209,7 @@ export const App = () => {
           playerReady={playerReady}
           playerTurn={playerTurn}
           attackCell = {attackCell}
+          restartGame = {restartGame}
         />
       )}
     </>

@@ -108,7 +108,7 @@ const BoardComponent = ({
   };
 
   const handleCellClick = (xIndex, yIndex) => {
-    if (gameState === 2) {
+    if (gameState === 2 && currentlyPlacing) {
       if (canBePlaced(playerId, currentlyPlacing, originalCells)) {
         let endX = currentlyPlacing.position.x;
         let endY = currentlyPlacing.position.y;
@@ -187,7 +187,7 @@ const BoardComponent = ({
     } else if (gameState === 3) {
       const element = document.getElementById(`${x}-${y}`);
       const classList = element.classList;
-      
+
       const updatedCells = cells.map((row, yIndex) =>
         row.map((cell, xIndex) => {
           if (cell.state === "hoverOver") {

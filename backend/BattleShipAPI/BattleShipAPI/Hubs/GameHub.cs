@@ -279,7 +279,7 @@ namespace BattleShipAPI.Hubs
                             cellOwner.CanPlay = false;
                             _db.Connections[cellOwner.PlayerId] = cellOwner;
                             
-                            await Clients.Group(gameRoom.Name).SendAsync("AttackResult", $"{cellOwner.Username} lost the game!");
+                            await Clients.Group(gameRoom.Name).SendAsync("GameLostResult", $"{cellOwner.Username}", "lost the game!");
                         }
 
                         if (players
@@ -287,7 +287,7 @@ namespace BattleShipAPI.Hubs
                             .All(p => !p.CanPlay))
                         {
                             gameRoom.State = GameState.Finished;
-                            await Clients.Group(gameRoom.Name).SendAsync("AttackResult", $"{connection.Username} won the game!");
+                            await Clients.Group(gameRoom.Name).SendAsync("WinnerResult", $"{connection.Username}", "won the game!");
                             await Clients.Group(gameRoom.Name).SendAsync("GameStateChanged", (int)gameRoom.State);
                         }
                     }

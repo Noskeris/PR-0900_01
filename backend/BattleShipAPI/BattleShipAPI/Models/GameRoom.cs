@@ -18,20 +18,34 @@ namespace BattleShipAPI.Models
         {
             var filteredPlayers = players
                 .Where(x => x.CanPlay)
-                .OrderBy(x => x.Username);
+                .OrderBy(x => x.Username)
+                .ToList(); 
 
-            if (TurnPlayerId == string.Empty)
+            if (!filteredPlayers.Any())
+            {
+                return string.Empty;
+            }
+
+            if (string.IsNullOrEmpty(TurnPlayerId))
             {
                 TurnPlayerId = filteredPlayers.First().PlayerId;
                 return TurnPlayerId;
             }
 
-            var turnPlayer = players.First(x => x.PlayerId == TurnPlayerId);
-            TurnPlayerId = players
-                .Where(x => x.CanPlay)
-                .FirstOrDefault(x =>
-                    string.Compare(x.Username, turnPlayer.Username, StringComparison.Ordinal) > 0)?
-                .PlayerId ?? filteredPlayers.First().PlayerId;
+            var turnPlayer = filteredPlayers.FirstOrDefault(x => x.PlayerId == TurnPlayerId);
+
+            if (turnPlayer == null)
+            {
+                TurnPlayerId = filteredPlayers.First().PlayerId;
+                return TurnPlayerId;
+            }
+
+            var nextPlayer = filteredPlayers
+                .SkipWhile(x => x.Username != turnPlayer.Username)
+                .Skip(1) 
+                .FirstOrDefault(); 
+
+            TurnPlayerId = nextPlayer?.PlayerId ?? filteredPlayers.First().PlayerId;
 
             return TurnPlayerId;
         }
