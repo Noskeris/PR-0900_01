@@ -41,6 +41,27 @@ const BoardComponent = ({
   }, [board]);
 
   useEffect(() => {
+    const handleAnimationEnd = (event) => {
+      if (event.animationName === 'shake') {
+        event.target.classList.remove('sunken');
+        event.target.classList.add('no-animation');
+      }
+    };
+  
+    // Select all cells that currently have the 'sunken' class
+    const sunkenCells = document.querySelectorAll('.cell.sunken');
+    sunkenCells.forEach((cell) => {
+      cell.addEventListener('animationend', handleAnimationEnd);
+    });
+  
+    return () => {
+      sunkenCells.forEach((cell) => {
+        cell.removeEventListener('animationend', handleAnimationEnd);
+      });
+    };
+  }, [cells]);
+  
+  useEffect(() => {
     const handleKeyDown = (event) => {
       if (currentlyPlacing != null && event.key === " ") {
         event.preventDefault();
@@ -164,6 +185,9 @@ const BoardComponent = ({
         }
       }
     } else if (gameState === 3) {
+      const element = document.getElementById(`${x}-${y}`);
+      const classList = element.classList;
+      
       const updatedCells = cells.map((row, yIndex) =>
         row.map((cell, xIndex) => {
           if (cell.state === "hoverOver") {
@@ -172,7 +196,8 @@ const BoardComponent = ({
           return cell;
         })
       );
-      if (updatedCells[x][y].ownerId !== playerId) {
+      
+      if (updatedCells[x][y].ownerId !== playerId && !classList.contains("no-animation")) {
         updatedCells[x][y].state = "hoverOver";
         setCells(updatedCells);
       }
