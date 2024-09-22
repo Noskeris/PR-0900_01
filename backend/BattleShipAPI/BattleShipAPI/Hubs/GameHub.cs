@@ -346,7 +346,7 @@ namespace BattleShipAPI.Hubs
                     _db.Connections[connection.PlayerId].IsModerator = false;
                     
                     await Clients.Caller.SendAsync("SetModerator", connection.IsModerator);
-                    await Clients.Client(newModerator.PlayerId).SendAsync("SetModerator", connection.IsModerator);
+                    await Clients.Client(newModerator.PlayerId).SendAsync("SetModerator", _db.Connections[newModerator.PlayerId].IsModerator);
                 }
                 
                 if (_db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom))
