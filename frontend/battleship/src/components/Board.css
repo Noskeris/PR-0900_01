@@ -49,3 +49,13 @@
 .cell.defaultcell {
   background-color: #aaa;
 }
+
+.cell.forbidden {
+  background-color: var(--oc-red-2);
+  border: 1px solid var(--oc-red-3);
+}
+
+.cell.placingShip{
+  background-color: var(--oc-blue-2);
+  border: 1px solid var(--oc-blue-3);
+}

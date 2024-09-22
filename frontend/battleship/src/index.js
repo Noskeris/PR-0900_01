@@ -13,7 +13,7 @@ export const App = () => {
   const [board, setBoard] = useState(null);
   const [username, setUsername] = useState("");
   const [playerId, setPlayerId] = useState();
-  const [gameState, setGameState] = useState(0);
+  const [gameState, setGameState] = useState(1);
 
   const joinGameRoom = async (usernameInput, gameRoomName) => {
     try {
@@ -27,13 +27,12 @@ export const App = () => {
         console.log("msg: ", msg);
       });
 
-      newConnection.on("RecieveSpecificMessage", (username, msg) => {
-        setMessages((prevMessages) => [...prevMessages, { username, msg }]);
-        console.log(msg);
-      });
-
       newConnection.on("SetModerator", (isModerator) => {
         setIsModerator(isModerator);
+      });
+
+      newConnection.on("JoinFailed", (message) => {
+        console.log("JoinFailed reason:", message)
       });
 
       newConnection.on("BoardGenerated", (gameRoom, generatedBoard) => {
@@ -41,7 +40,7 @@ export const App = () => {
         console.log("Board received:", generatedBoard);
       });
 
-      newConnection.on("RecievePlayerId", (playerId) => {
+      newConnection.on("ReceivePlayerId", (playerId) => {
         setPlayerId(playerId);
       });
 
@@ -52,20 +51,16 @@ export const App = () => {
 
       await newConnection.start();
 
-      const gameRoom = {
-        GameRoomName: gameRoomName,
-        GameState: 0,
-      };
-
       const userConnection = {
         Username: usernameInput,
-        GameRoom: gameRoom,
+        GameRoomName: gameRoomName,
       };
 
       await newConnection.invoke("JoinSpecificGameRoom", userConnection);
 
       setConnection(newConnection);
       setUsername(usernameInput);
+
     } catch (error) {
       console.log("Connection error: ", error);
     }
@@ -100,6 +95,7 @@ export const App = () => {
           generateBoardAction={generateBoardAction}
           isModerator={isModerator}
           board={board}
+          setBoard={setBoard}
           username={username}
           playerId={playerId}
           gameState={gameState}
