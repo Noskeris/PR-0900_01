@@ -18,7 +18,6 @@ const BoardComponent = ({
   addShip,
   gameState,
   placeShip,
-  placedShips,
 }) => {
   const nameToShipTypeMapping = {
     carrier: 1,

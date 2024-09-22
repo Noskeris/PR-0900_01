@@ -70,7 +70,6 @@ export const App = () => {
         .map((ship) => {
           const { name, length } = shipTypesMapping[ship.shipType];
           
-          // Only return the ship object if count > 0
           if (ship.count > 0) {
             return {
               name,
@@ -80,7 +79,7 @@ export const App = () => {
             };
           }
           
-          return null; // Return null if count is 0 or less
+          return null; 
         })
         .filter(Boolean);
         

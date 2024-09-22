@@ -79,8 +79,7 @@ export const calculateOverhang = (entity, cells, playerId) => {
       const xPos = position.x + i;
       if (
         xPos >= cells.length ||
-        cells[xPos][position.y].ownerId !== playerId //||
-        //cells[xPos][position.y].state === 2
+        cells[xPos][position.y].ownerId !== playerId 
       ) {
         overhang++;
       }

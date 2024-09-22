@@ -19,7 +19,6 @@ const GameRoom = ({
   addShip
 }) => {
   const [currentlyPlacing, setCurrentlyPlacing] = useState(null);
-  const [placedShips, setPlacedShips] = useState([]);
   const [availableShips, setAvailableShips] = useState(shipsToPlace);
 
   useEffect(() => {
@@ -38,14 +37,6 @@ const GameRoom = ({
   };
 
   const placeShip = (currentlyPlacing) => {
-    // setPlacedShips([
-    //   ...placedShips,
-    //   {
-    //     ...currentlyPlacing,
-    //     placed: true,
-    //   },
-    // ]);
-
     setAvailableShips((previousShips) =>
       previousShips.filter((ship) => ship.name !== currentlyPlacing.name)
     );
@@ -130,9 +121,7 @@ const GameRoom = ({
               rotateShip={rotateShip}
               addShip={addShip}
               gameState={gameState}
-
               placeShip={placeShip}
-              placedShips={placedShips}
             />
           ) : (
             <Typography>Waiting for board generation...</Typography>
