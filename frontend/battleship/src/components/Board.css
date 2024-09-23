@@ -11,6 +11,13 @@
 .board-grid {
   display: grid;
   gap: 0;
+  overflow: auto; 
+  margin: 0 auto;
+}
+
+@media (max-width: 600px) {
+  .board-grid {
+  }
 }
 
 .cell {

@@ -1,8 +1,15 @@
-import { Grid, Box, Typography, Button } from "@mui/material";
+import React, { useEffect, useState } from "react";
+import {
+  Grid,
+  Box,
+  Typography,
+  Button,
+  Paper,
+  Divider,
+  Stack,
+} from "@mui/material";
 import MessageContainer from "./MessageContainer";
 import BoardComponent from "./BoardComponent";
-import React, { useEffect, useState } from "react";
-
 import { PlayerFleet } from "./PlayerFleet";
 
 const GameRoom = ({
@@ -20,7 +27,7 @@ const GameRoom = ({
   playerReady,
   playerTurn,
   attackCell,
-  restartGame
+  restartGame,
 }) => {
   const [currentlyPlacing, setCurrentlyPlacing] = useState(null);
   const [availableShips, setAvailableShips] = useState(shipsToPlace);
@@ -61,69 +68,21 @@ const GameRoom = ({
   };
 
   return (
-    <>
-      <Box sx={{ p: 5 }}>
-        <Grid container spacing={2}>
-          <Grid item xs={10}>
-            <Typography variant="h2">GameRoom</Typography>
-          </Grid>
-          <Grid item xs={12}>
-            <MessageContainer messages={messages} />
-          </Grid>
-          {gameState === 1 && isModerator && (
-            <Grid item xs={12}>
-              <Button
-                variant="outlined"
-                color="secondary"
-                disabled={!isModerator}
-                onClick={generateBoardAction}
-              >
-                Generate Board
-              </Button>
-            </Grid>
-          )}
-          {gameState === 2 && (
-            <>
-              <Grid item xs={12}>
-                <Typography>Place your ships on the board!</Typography>
-              </Grid>
-              {isModerator && (
-                <Grid item xs={12}>
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    onClick={startGame}
-                  >
-                    Start Game
-                  </Button>
-                </Grid>
-              )}
-              <PlayerFleet
-                availableShips={availableShips}
-                selectShip={selectShip}
-                currentlyPlacing={currentlyPlacing}
-                playerReady={playerReady}
-              />
-            </>
-          )}
-          {gameState === 3 && (
-            <Grid item xs={12}>
-              <Typography>Game in progress!</Typography>
-            </Grid>
-          )}
-          {gameState === 4 &&
-            isModerator && (
-              <Grid item xs={12}>
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  onClick={restartGame}
-                >
-                  Restart Game
-                </Button>
-              </Grid>
-            )}
-          <Grid item xs={12}>
+    <Box
+      sx={{
+        p: 5,
+        width: "103%",
+        overflowX: "hidden", // Prevent horizontal scrolling
+      }}
+    >
+      <Grid container spacing={2}>
+        {/* Left Column: Game Board */}
+        <Grid item xs={12} md={8}>
+          <Paper elevation={3} sx={{ p: 2 }}>
+            <Typography variant="h4" align="center" gutterBottom>
+              Game Room
+            </Typography>
+            <Divider sx={{ mb: 2 }} />
             {board ? (
               <BoardComponent
                 board={board}
@@ -140,12 +99,77 @@ const GameRoom = ({
                 attackCell={attackCell}
               />
             ) : (
-              <Typography>Waiting for board generation...</Typography>
+              <Typography variant="h6" align="center">
+                Waiting for board generation...
+              </Typography>
             )}
-          </Grid>
+          </Paper>
         </Grid>
-      </Box>
-    </>
+
+        {/* Right Column: Controls, PlayerFleet, and Messages */}
+        <Grid item xs={12} md={4}>
+          <Stack spacing={2}>
+            {/* Conditionally render Controls Box */}
+            {(gameState === 1 && isModerator) ||
+            (gameState === 2 && isModerator) ||
+            (gameState === 4 && isModerator) ? (
+              <Paper elevation={3} sx={{ p: 2 }}>
+                <Stack spacing={2} alignItems="center">
+                  {gameState === 1 && isModerator && (
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={generateBoardAction}
+                      fullWidth
+                    >
+                      Generate Board
+                    </Button>
+                  )}
+                  {gameState === 2 && isModerator && (
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={startGame}
+                      fullWidth
+                    >
+                      Start Game
+                    </Button>
+                  )}
+                  {gameState === 4 && isModerator && (
+                    <Button
+                      variant="contained"
+                      color="secondary"
+                      onClick={restartGame}
+                      fullWidth
+                    >
+                      Restart Game
+                    </Button>
+                  )}
+                </Stack>
+              </Paper>
+            ) : null}
+
+            {/* PlayerFleet Box */}
+            {gameState === 2 && (
+              <Paper elevation={3} sx={{ p: 2 }}>
+                <Typography variant="h6" align="center" gutterBottom>
+                  Place your ships
+                </Typography>
+                <PlayerFleet
+                  availableShips={availableShips}
+                  selectShip={selectShip}
+                  currentlyPlacing={currentlyPlacing}
+                  playerReady={playerReady}
+                />
+              </Paper>
+            )}
+
+            {/* Messages Box */}
+            <MessageContainer messages={messages} />
+          </Stack>
+        </Grid>
+      </Grid>
+    </Box>
   );
 };
 
