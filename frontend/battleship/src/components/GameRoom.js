@@ -71,33 +71,51 @@ const GameRoom = ({
     <Box
       sx={{
         p: 5,
-        width: "103%",
-        overflowX: "hidden", // Prevent horizontal scrolling
+        width: "70vw",
+        overflowX: "hidden",
       }}
     >
       <Grid container spacing={2}>
         {/* Left Column: Game Board */}
         <Grid item xs={12} md={8}>
-          <Paper elevation={3} sx={{ p: 2 }}>
+          <Paper
+            elevation={3}
+            sx={{
+              p: 2,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+            }}
+          >
             <Typography variant="h4" align="center" gutterBottom>
               Game Room
             </Typography>
             <Divider sx={{ mb: 2 }} />
+
+            {gameState === 3 && (
+            <Typography variant="h6" color="primary" gutterBottom>
+              {playerTurn === playerId ? "Your Turn" : "Opponent's Turn"}
+            </Typography>
+)}
+
+
             {board ? (
-              <BoardComponent
-                board={board}
-                setBoard={setBoard}
-                username={username}
-                playerId={playerId}
-                currentlyPlacing={currentlyPlacing}
-                setCurrentlyPlacing={setCurrentlyPlacing}
-                rotateShip={rotateShip}
-                addShip={addShip}
-                gameState={gameState}
-                placeShip={placeShip}
-                playerTurn={playerTurn}
-                attackCell={attackCell}
-              />
+              <Box sx={{ display: "flex", justifyContent: "center" }}>
+                <BoardComponent
+                  board={board}
+                  setBoard={setBoard}
+                  username={username}
+                  playerId={playerId}
+                  currentlyPlacing={currentlyPlacing}
+                  setCurrentlyPlacing={setCurrentlyPlacing}
+                  rotateShip={rotateShip}
+                  addShip={addShip}
+                  gameState={gameState}
+                  placeShip={placeShip}
+                  playerTurn={playerTurn}
+                  attackCell={attackCell}
+                />
+              </Box>
             ) : (
               <Typography variant="h6" align="center">
                 Waiting for board generation...
