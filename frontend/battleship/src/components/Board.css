@@ -11,6 +11,13 @@
 .board-grid {
   display: grid;
   gap: 0;
+  overflow: auto; 
+  margin: 0 auto;
+}
+
+@media (max-width: 600px) {
+  .board-grid {
+  }
 }
 
 .cell {
@@ -62,7 +69,7 @@
 }
 
 .cell.purple {
-  background-color: #800080;
+  background-color: #832c8377;
 }
 
 .cell.defaultcell {
