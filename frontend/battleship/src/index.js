@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import { Header } from "./Header";
 import WaitingRoom from "./components/WaitingRoom.js";
 import { HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
 import GameRoom from "./components/GameRoom.js";
 import "./css/style.css";
-import GameComponent from './components/GameComponent.js';
+//import GameComponent from './components/GameComponent.js';
 
 export const App = () => {
   const shipTypesMapping = {
@@ -24,6 +24,11 @@ export const App = () => {
   const [gameState, setGameState] = useState(1);
   const [shipsToPlace, setShipsToPlace] = useState();
   const [playerTurn, setPlayerTurn] = useState();
+
+  const [turnEndTime, setTurnEndTime] = useState(null);
+  const [timer, setTimer] = useState(0);
+
+
 
   const joinGameRoom = async (usernameInput, gameRoomName) => {
     try {
@@ -72,8 +77,10 @@ export const App = () => {
         console.log(message);
       });
 
-      newConnection.on("PlayerTurn", (playerId) => {
+      newConnection.on("PlayerTurn", (playerId, turnStartTime, turnDuration) => {
         setPlayerTurn(playerId);
+        const startTime = new Date(turnStartTime);
+        setTurnEndTime(new Date(startTime.getTime() + turnDuration * 1000));
       })
 
       newConnection.on("FailedToAttackCell", (message) => {
@@ -189,6 +196,15 @@ export const App = () => {
     }
   }
 
+  const playerTurnTimeEnded = async () => {
+    try {
+      await connection.invoke("PlayerTurnTimeEnded");
+      console.log("PlayerTurnTimeEnded invoked");
+    } catch (error) {
+      console.log("Error PlayerTurnTimeEnded", error);
+    }
+  }
+
 
   return (
     <>
@@ -212,6 +228,10 @@ export const App = () => {
           playerTurn={playerTurn}
           attackCell={attackCell}
           restartGame={restartGame}
+          timer={timer}
+          setTimer={setTimer}
+          turnEndTime={turnEndTime}
+          playerTurnTimeEnded={playerTurnTimeEnded}
         />
       )}
     </>
