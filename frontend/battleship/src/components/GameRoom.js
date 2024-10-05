@@ -28,6 +28,10 @@ const GameRoom = ({
   playerTurn,
   attackCell,
   restartGame,
+  timer,
+  setTimer,
+  turnEndTime,
+  playerTurnTimeEnded,
 }) => {
   const [currentlyPlacing, setCurrentlyPlacing] = useState(null);
   const [availableShips, setAvailableShips] = useState(shipsToPlace);
@@ -35,6 +39,20 @@ const GameRoom = ({
   useEffect(() => {
     setAvailableShips(shipsToPlace);
   }, [shipsToPlace]);
+
+  useEffect(() => {
+    if (turnEndTime) {
+      const interval = setInterval(() => {
+        const timeLeft = Math.max(0, (turnEndTime - new Date()) / 1000);
+        setTimer(timeLeft.toFixed(1));
+        if (timeLeft <= 0) {
+          clearInterval(interval);
+          playerTurnTimeEnded();
+        }
+      }, 100);
+      return () => clearInterval(interval);
+    }
+  }, [turnEndTime]);
 
   const selectShip = (shipName) => {
     let shipIdx = availableShips.findIndex((ship) => ship.name === shipName);
@@ -93,11 +111,17 @@ const GameRoom = ({
             <Divider sx={{ mb: 2 }} />
 
             {gameState === 3 && (
-            <Typography variant="h6" color="primary" gutterBottom>
-              {playerTurn === playerId ? "Your Turn" : "Opponent's Turn"}
-            </Typography>
-)}
+              <Typography variant="h6" color="primary" gutterBottom>
+                {playerTurn === playerId ? "Your Turn" : "Opponent's Turn"}
+              </Typography>
+            )}
 
+            {/* Timer */}
+            {gameState === 3 && playerTurn === playerId && (
+              <Typography variant="h6" align="center" color="error">
+                Time left for turn: {timer}
+              </Typography>
+            )}
 
             {board ? (
               <Box sx={{ display: "flex", justifyContent: "center" }}>

@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import { Header } from "./Header";
 import WaitingRoom from "./components/WaitingRoom.js";
 import { HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
 import GameRoom from "./components/GameRoom.js";
 import "./css/style.css";
+//import GameComponent from './components/GameComponent.js';
 
 export const App = () => {
   const shipTypesMapping = {
@@ -24,6 +25,11 @@ export const App = () => {
   const [shipsToPlace, setShipsToPlace] = useState();
   const [playerTurn, setPlayerTurn] = useState();
 
+  const [turnEndTime, setTurnEndTime] = useState(null);
+  const [timer, setTimer] = useState(0);
+
+
+
   const joinGameRoom = async (usernameInput, gameRoomName) => {
     try {
       const newConnection = new HubConnectionBuilder()
@@ -31,6 +37,7 @@ export const App = () => {
         .configureLogging(LogLevel.Information)
         .build();
 
+      // Set up event handlers
       newConnection.on("JoinSpecificGameRoom", (username, msg) => {
         setMessages((prevMessages) => [...prevMessages, { username, msg }]);
         console.log("msg: ", msg);
@@ -70,8 +77,10 @@ export const App = () => {
         console.log(message);
       });
 
-      newConnection.on("PlayerTurn", (playerId) => {
+      newConnection.on("PlayerTurn", (playerId, turnStartTime, turnDuration) => {
         setPlayerTurn(playerId);
+        const startTime = new Date(turnStartTime);
+        setTurnEndTime(new Date(startTime.getTime() + turnDuration * 1000));
       })
 
       newConnection.on("FailedToAttackCell", (message) => {
@@ -96,21 +105,21 @@ export const App = () => {
 
       newConnection.on("UpdatedShipsConfig", (shipsConfig) => {
         const mappedShips = shipsConfig
-        .map((ship) => {
-          const { name, length } = shipTypesMapping[ship.shipType];
-          
-          if (ship.count > 0) {
-            return {
-              name,
-              length,
-              placed: null,
-              count: ship.count,
-            };
-          }
-          
-          return null; 
-        })
-        .filter(Boolean);
+          .map((ship) => {
+            const { name, length } = shipTypesMapping[ship.shipType];
+            
+            if (ship.count > 0) {
+              return {
+                name,
+                length,
+                placed: null,
+                count: ship.count,
+              };
+            }
+            
+            return null; 
+          })
+          .filter(Boolean);
         
         setShipsToPlace(mappedShips);
         console.log("shipsTOPlaceMapp", mappedShips)
@@ -187,6 +196,15 @@ export const App = () => {
     }
   }
 
+  const playerTurnTimeEnded = async () => {
+    try {
+      await connection.invoke("PlayerTurnTimeEnded");
+      console.log("PlayerTurnTimeEnded invoked");
+    } catch (error) {
+      console.log("Error PlayerTurnTimeEnded", error);
+    }
+  }
+
 
   return (
     <>
@@ -208,8 +226,12 @@ export const App = () => {
           addShip={addShip}
           playerReady={playerReady}
           playerTurn={playerTurn}
-          attackCell = {attackCell}
-          restartGame = {restartGame}
+          attackCell={attackCell}
+          restartGame={restartGame}
+          timer={timer}
+          setTimer={setTimer}
+          turnEndTime={turnEndTime}
+          playerTurnTimeEnded={playerTurnTimeEnded}
         />
       )}
     </>
