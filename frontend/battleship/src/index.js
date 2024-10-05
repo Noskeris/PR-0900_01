@@ -5,6 +5,7 @@ import WaitingRoom from "./components/WaitingRoom.js";
 import { HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
 import GameRoom from "./components/GameRoom.js";
 import "./css/style.css";
+import GameComponent from './components/GameComponent.js';
 
 export const App = () => {
   const shipTypesMapping = {
@@ -31,6 +32,7 @@ export const App = () => {
         .configureLogging(LogLevel.Information)
         .build();
 
+      // Set up event handlers
       newConnection.on("JoinSpecificGameRoom", (username, msg) => {
         setMessages((prevMessages) => [...prevMessages, { username, msg }]);
         console.log("msg: ", msg);
@@ -96,21 +98,21 @@ export const App = () => {
 
       newConnection.on("UpdatedShipsConfig", (shipsConfig) => {
         const mappedShips = shipsConfig
-        .map((ship) => {
-          const { name, length } = shipTypesMapping[ship.shipType];
-          
-          if (ship.count > 0) {
-            return {
-              name,
-              length,
-              placed: null,
-              count: ship.count,
-            };
-          }
-          
-          return null; 
-        })
-        .filter(Boolean);
+          .map((ship) => {
+            const { name, length } = shipTypesMapping[ship.shipType];
+            
+            if (ship.count > 0) {
+              return {
+                name,
+                length,
+                placed: null,
+                count: ship.count,
+              };
+            }
+            
+            return null; 
+          })
+          .filter(Boolean);
         
         setShipsToPlace(mappedShips);
         console.log("shipsTOPlaceMapp", mappedShips)
@@ -208,8 +210,8 @@ export const App = () => {
           addShip={addShip}
           playerReady={playerReady}
           playerTurn={playerTurn}
-          attackCell = {attackCell}
-          restartGame = {restartGame}
+          attackCell={attackCell}
+          restartGame={restartGame}
         />
       )}
     </>

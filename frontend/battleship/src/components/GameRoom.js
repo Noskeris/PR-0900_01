@@ -31,10 +31,36 @@ const GameRoom = ({
 }) => {
   const [currentlyPlacing, setCurrentlyPlacing] = useState(null);
   const [availableShips, setAvailableShips] = useState(shipsToPlace);
+  const [timer, setTimer] = useState(10);
 
   useEffect(() => {
     setAvailableShips(shipsToPlace);
   }, [shipsToPlace]);
+
+  useEffect(() => {
+    let countdown;
+
+    if (gameState === 3 && playerTurn === playerId) {
+      countdown = setInterval(() => {
+        setTimer((prevTime) => {
+          if (prevTime > 0) {
+            return prevTime - 1;
+          } else {
+            clearInterval(countdown);
+            return 0;
+          }
+        });
+      }, 1000);
+    }
+
+    return () => clearInterval(countdown);
+  }, [gameState, playerTurn, playerId]);
+
+  useEffect(() => {
+    if (gameState === 3 && playerTurn === playerId) {
+      setTimer(30);
+    }
+  }, [gameState, playerTurn, playerId]);
 
   const selectShip = (shipName) => {
     let shipIdx = availableShips.findIndex((ship) => ship.name === shipName);
@@ -93,11 +119,17 @@ const GameRoom = ({
             <Divider sx={{ mb: 2 }} />
 
             {gameState === 3 && (
-            <Typography variant="h6" color="primary" gutterBottom>
-              {playerTurn === playerId ? "Your Turn" : "Opponent's Turn"}
-            </Typography>
-)}
+              <Typography variant="h6" color="primary" gutterBottom>
+                {playerTurn === playerId ? "Your Turn" : "Opponent's Turn"}
+              </Typography>
+            )}
 
+            {/* Timer */}
+            {gameState === 3 && playerTurn === playerId && (
+              <Typography variant="h6" align="center" color="error">
+                Laikas atlikti ėjimą: {timer}
+              </Typography>
+            )}
 
             {board ? (
               <Box sx={{ display: "flex", justifyContent: "center" }}>
@@ -127,7 +159,7 @@ const GameRoom = ({
         {/* Right Column: Controls, PlayerFleet, and Messages */}
         <Grid item xs={12} md={4}>
           <Stack spacing={2}>
-            {/* Conditionally render Controls Box */}
+                        {/* Conditionally render Controls Box */}
             {(gameState === 1 && isModerator) ||
             (gameState === 2 && isModerator) ||
             (gameState === 4 && isModerator) ? (
