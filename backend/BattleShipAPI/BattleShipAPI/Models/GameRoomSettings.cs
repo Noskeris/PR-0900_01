@@ -16,7 +16,7 @@ public class GameRoomSettings
     public List<SuperAttackConfig> SuperAttacksConfig { get; set; } =
     [
         new SuperAttackConfig() { AttackType = AttackType.Plus, Count = 1 },
-        new SuperAttackConfig() { AttackType = AttackType.Cross, Count = 0 },
-        new SuperAttackConfig() { AttackType = AttackType.Boom, Count = 0 }
+        new SuperAttackConfig() { AttackType = AttackType.Cross, Count = 1 },
+        new SuperAttackConfig() { AttackType = AttackType.Boom, Count = 1 }
     ];
 }

@@ -299,7 +299,7 @@ namespace BattleShipAPI.Hubs
 
                 foreach (var (xCell, yCell)  in attackCells)
                 {
-                    await AttackCell(xCell, yCell, players, gameRoom, connection);
+                    await AttackCellByOne(xCell, yCell, players, gameRoom, connection);
                 }
                 
                 await Clients.Group(gameRoom.Name).SendAsync("BoardUpdated", gameRoom.Name, gameRoom.Board);
@@ -436,7 +436,7 @@ namespace BattleShipAPI.Hubs
                    gameRoom.Board.Cells[x][y].State != CellState.Missed;
         }
 
-        private async Task AttackCell(int x, int y, List<UserConnection> players, GameRoom gameRoom, UserConnection connection)
+        private async Task AttackCellByOne(int x, int y, List<UserConnection> players, GameRoom gameRoom, UserConnection connection)
         {
             var cell = gameRoom.Board.Cells[x][y];
 
