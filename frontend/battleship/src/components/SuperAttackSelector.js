@@ -1,11 +1,9 @@
 import React, { useState } from "react";
 import { Box, Button, Typography, Stack } from "@mui/material";
 
-const SuperAttackSelector = ({ superAttacks, onSelectAttack }) => {
-  const [selectedAttack, setSelectedAttack] = useState("normal");
+const SuperAttackSelector = ({ superAttacks, onSelectAttack, attackType }) => {
 
   const handleSelectAttack = (attack) => {
-    setSelectedAttack(attack);
     onSelectAttack(attack);
   };
 
@@ -18,7 +16,7 @@ const SuperAttackSelector = ({ superAttacks, onSelectAttack }) => {
         {superAttacks.map((attack) => (
           <Button
             key={attack.name}
-            variant={selectedAttack === attack.name ? "contained" : "outlined"}
+            variant={attackType === attack.name ? "contained" : "outlined"}
             onClick={() => handleSelectAttack(attack.name)}
             disabled={attack.count <= 0} // Disable if no attacks left
           >
@@ -26,7 +24,7 @@ const SuperAttackSelector = ({ superAttacks, onSelectAttack }) => {
           </Button>
         ))}
         <Button
-          variant={selectedAttack === "normal" ? "contained" : "outlined"}
+          variant={attackType === "normal" ? "contained" : "outlined"}
           onClick={() => handleSelectAttack("normal")}
         >
           Normal

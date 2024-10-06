@@ -137,6 +137,7 @@ const GameRoom = ({
               </Typography>
               <SuperAttackSelector
                   superAttacks={superAttacks}
+                  attackType={attackType}
                   onSelectAttack={handleSelectAttack}
                 />
             </>
