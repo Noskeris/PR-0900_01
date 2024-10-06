@@ -250,6 +250,7 @@ namespace BattleShipAPI.Hubs
         {
             if (_db.Connections.TryGetValue(Context.ConnectionId, out var connection)
                 && _db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom)
+                && gameRoom.TurnPlayerId.Equals(connection.PlayerId)
                 && gameRoom.State == GameState.InProgress)
             {
                 _db.GameRooms[connection.GameRoomName] = gameRoom;

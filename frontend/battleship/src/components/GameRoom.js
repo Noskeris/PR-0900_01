@@ -47,7 +47,10 @@ const GameRoom = ({
         setTimer(timeLeft.toFixed(1));
         if (timeLeft <= 0) {
           clearInterval(interval);
-          playerTurnTimeEnded();
+          if(playerId === playerTurn)
+          {
+            playerTurnTimeEnded();
+          }
         }
       }, 100);
       return () => clearInterval(interval);
