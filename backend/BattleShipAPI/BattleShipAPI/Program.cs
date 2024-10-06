@@ -28,7 +28,7 @@ namespace BattleShipAPI
                 });
             });
 
-            builder.Services.AddSingleton<InMemoryDB>();
+            //builder.Services.AddSingleton<InMemoryDB>();
 
             var app = builder.Build();
 

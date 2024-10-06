@@ -1,8 +1,6 @@
 ﻿using BattleShipAPI.Enums;
 using BattleShipAPI.Models;
 using BattleShipAPI.Repository;
-using Microsoft.AspNet.SignalR.Infrastructure;
-using Microsoft.AspNet.SignalR.Messaging;
 using Microsoft.AspNetCore.SignalR;
 
 namespace BattleShipAPI.Hubs
@@ -12,7 +10,11 @@ namespace BattleShipAPI.Hubs
         private readonly InMemoryDB _db;
         private readonly int timeForTurn = 30;
 
-        public GameHub(InMemoryDB db) => _db = db;
+        public GameHub()
+        {
+            //1. DESIGN PATTERN: Singleton
+            _db = InMemoryDB.Instance;
+        }
 
         public async Task JoinSpecificGameRoom(UserConnection connection)
         {
