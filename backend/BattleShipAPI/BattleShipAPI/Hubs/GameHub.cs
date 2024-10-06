@@ -238,6 +238,8 @@ namespace BattleShipAPI.Hubs
 
                 _db.GameRooms[connection.GameRoomName] = gameRoom;
 
+                await Clients.Group(gameRoom.Name).SendAsync("UpdatedSuperAttacksConfig", gameRoom.Settings.SuperAttacksConfig);
+
                 Console.WriteLine($"Game state changed to: {gameRoom.State}");
                 await Clients.Group(gameRoom.Name).SendAsync("GameStateChanged", (int)gameRoom.State);
 
@@ -261,7 +263,7 @@ namespace BattleShipAPI.Hubs
             }
         }
 
-        public async Task AttackCell(int x, int y)
+        public async Task AttackCell(int x, int y, AttackType attackType = AttackType.Normal)
         {
             if (_db.Connections.TryGetValue(Context.ConnectionId, out var connection)
                 && _db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom)
@@ -282,6 +284,16 @@ namespace BattleShipAPI.Hubs
                     await Clients.Caller.SendAsync("FailedToAttackCell", "This territory has already been attacked.");
                     return;
                 }
+                
+                if (!connection.TryUseSuperAttack(attackType, gameRoom.Settings.SuperAttacksConfig))
+                {
+                    await Clients.Caller.SendAsync("FailedToAttackCell", "Invalid attack type.");
+                    return;
+                }
+                
+                _db.Connections[Context.ConnectionId] = connection;
+
+                await Clients.Caller.SendAsync("UpdatedSuperAttacksConfig", connection.GetAllowedSuperAttacksConfig(gameRoom.Settings.SuperAttacksConfig));
 
                 if (cell.State == CellState.HasShip)
                 {
@@ -473,6 +485,7 @@ namespace BattleShipAPI.Hubs
                         _db.Connections[x.PlayerId].CanPlay = false;
                         _db.Connections[x.PlayerId].HasDisconnected = false;
                         _db.Connections[x.PlayerId].PlacedShips.Clear();
+                        _db.Connections[x.PlayerId].UsedSuperAttacks.Clear();
                     });
 
                 await Clients.Group(gameRoom.Name).SendAsync("GameStateChanged", (int)gameRoom.State);
