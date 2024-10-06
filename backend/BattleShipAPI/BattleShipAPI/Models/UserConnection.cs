@@ -40,6 +40,11 @@ namespace BattleShipAPI.Models
 
         public bool TryUseSuperAttack(AttackType attackType, List<SuperAttackConfig> gameSuperAttacksConfig)
         {
+            if (attackType == AttackType.Normal)
+            {
+                return true;
+            }
+            
             var allowedSuperAttacks = GetAllowedSuperAttacksConfig(gameSuperAttacksConfig);
             
             var superAttack = allowedSuperAttacks.FirstOrDefault(x => x.AttackType == attackType);
