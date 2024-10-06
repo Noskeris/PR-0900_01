@@ -6,6 +6,7 @@ import {
   putEntityInLayout,
   calculateOverhang,
   canBePlaced,
+  calculateAttackTypeHover
 } from "./layoutHelpers";
 
 const BoardComponent = ({
@@ -19,7 +20,8 @@ const BoardComponent = ({
   gameState,
   placeShip,
   playerTurn,
-  attackCell
+  attackCell,
+  attackType
 }) => {
   const nameToShipTypeMapping = {
     carrier: 1,
@@ -27,6 +29,12 @@ const BoardComponent = ({
     cruiser: 3,
     submarine: 4,
     destroyer: 5,
+  };
+  const nameToSuperAttackMapping = {
+    normal: 1,
+    plus: 2,
+    cross: 3,
+    boom: 4
   };
   const [originalCells, setOriginalCells] = useState(board.cells);
   const [cells, setCells] = useState(board.cells);
@@ -133,7 +141,7 @@ const BoardComponent = ({
     } else if( gameState === 3) {
         if(playerTurn === playerId){
           console.log("attacking ", xIndex, yIndex);
-          attackCell(xIndex, yIndex);
+          attackCell(xIndex, yIndex, nameToSuperAttackMapping[attackType]);
         }
         else {
           console.log("cant attack now not your turn", xIndex, yIndex);
@@ -197,10 +205,15 @@ const BoardComponent = ({
         })
       );
       
-      if (updatedCells[x][y].ownerId !== playerId && !classList.contains("no-animation")) {
-        updatedCells[x][y].state = "hoverOver";
-        setCells(updatedCells);
+      if(attackType === "normal"){
+        if (updatedCells[x][y].ownerId !== playerId && classList.contains("defaultcell")) {
+          updatedCells[x][y].state = "hoverOver";
+          setCells(updatedCells);
+        }
+      } else {
+        setCells(calculateAttackTypeHover(updatedCells, playerId, x, y, attackType))
       }
+      
     }
   };
 

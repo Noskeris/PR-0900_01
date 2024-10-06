@@ -11,6 +11,7 @@ import {
 import MessageContainer from "./MessageContainer";
 import BoardComponent from "./BoardComponent";
 import { PlayerFleet } from "./PlayerFleet";
+import SuperAttackSelector from "./SuperAttackSelector";
 
 const GameRoom = ({
   messages,
@@ -32,9 +33,12 @@ const GameRoom = ({
   setTimer,
   turnEndTime,
   playerTurnTimeEnded,
+  superAttacks,
+  isPlayerReady
 }) => {
   const [currentlyPlacing, setCurrentlyPlacing] = useState(null);
   const [availableShips, setAvailableShips] = useState(shipsToPlace);
+  const [attackType, setAttackType] = useState("normal");
 
   useEffect(() => {
     setAvailableShips(shipsToPlace);
@@ -47,12 +51,25 @@ const GameRoom = ({
         setTimer(timeLeft.toFixed(1));
         if (timeLeft <= 0) {
           clearInterval(interval);
-          playerTurnTimeEnded();
+          if(playerId === playerTurn)
+          {
+            playerTurnTimeEnded();
+          }
         }
       }, 100);
       return () => clearInterval(interval);
     }
   }, [turnEndTime]);
+
+  useEffect(() => {
+    if (playerTurn === playerId) {
+      setAttackType("normal");
+    }
+  }, [playerTurn, playerId]);
+
+  const handleSelectAttack = (attackName) => {
+    setAttackType(attackName); 
+  };
 
   const selectShip = (shipName) => {
     let shipIdx = availableShips.findIndex((ship) => ship.name === shipName);
@@ -111,18 +128,21 @@ const GameRoom = ({
             <Divider sx={{ mb: 2 }} />
 
             {gameState === 3 && (
+              <>
               <Typography variant="h6" color="primary" gutterBottom>
                 {playerTurn === playerId ? "Your Turn" : "Opponent's Turn"}
               </Typography>
-            )}
-
-            {/* Timer */}
-            {gameState === 3 && playerTurn === playerId && (
               <Typography variant="h6" align="center" color="error">
-                Time left for turn: {timer}
+                {playerTurn === playerId ?  `Time left for turn: ${timer}` : "Waiting for opponent..."}
               </Typography>
+              <SuperAttackSelector
+                  superAttacks={superAttacks}
+                  attackType={attackType}
+                  onSelectAttack={handleSelectAttack}
+                />
+            </>
             )}
-
+           
             {board ? (
               <Box sx={{ display: "flex", justifyContent: "center" }}>
                 <BoardComponent
@@ -138,6 +158,7 @@ const GameRoom = ({
                   placeShip={placeShip}
                   playerTurn={playerTurn}
                   attackCell={attackCell}
+                  attackType={attackType}
                 />
               </Box>
             ) : (
@@ -202,6 +223,7 @@ const GameRoom = ({
                   selectShip={selectShip}
                   currentlyPlacing={currentlyPlacing}
                   playerReady={playerReady}
+                  isPlayerReady={isPlayerReady}
                 />
               </Paper>
             )}

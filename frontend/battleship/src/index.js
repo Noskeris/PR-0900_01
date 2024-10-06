@@ -15,6 +15,12 @@ export const App = () => {
     4: { name: 'submarine', length: 2 },
     5: { name: 'destroyer', length: 1 },
   };
+  const superAttackTypesMapping = {
+    2: "plus",
+    3: "cross",
+    4: "boom"
+  }
+
   const [connection, setConnection] = useState();
   const [messages, setMessages] = useState([]);
   const [isModerator, setIsModerator] = useState(false);
@@ -27,7 +33,8 @@ export const App = () => {
 
   const [turnEndTime, setTurnEndTime] = useState(null);
   const [timer, setTimer] = useState(0);
-
+  const [superAttacks, setSuperAttacks] = useState();
+  const [isPlayerReady, setIsPlayerReady] = useState(false);
 
 
   const joinGameRoom = async (usernameInput, gameRoomName) => {
@@ -54,6 +61,7 @@ export const App = () => {
       newConnection.on("BoardGenerated", (gameRoom, generatedBoard) => {
         setBoard(generatedBoard);
         console.log("Board received:", generatedBoard);
+        setIsPlayerReady(false);
       });
 
       newConnection.on("ReceivePlayerId", (playerId) => {
@@ -74,7 +82,7 @@ export const App = () => {
       });
 
       newConnection.on("PlayerReady", (message) => {
-        console.log(message);
+        setIsPlayerReady(true);
       });
 
       newConnection.on("PlayerTurn", (playerId, turnStartTime, turnDuration) => {
@@ -97,6 +105,22 @@ export const App = () => {
       
       newConnection.on("GameLostResult", (username, msg) => {
         setMessages((prevMessages) => [...prevMessages, { username, msg }]);
+      });
+
+      newConnection.on("UpdatedSuperAttacksConfig", (superAttacksConfig) => {
+        const mappedSuperAttacks = superAttacksConfig
+          .map((superAttack) => {
+              const name = superAttackTypesMapping[superAttack.attackType]
+
+              return {
+                name: name,
+                count: superAttack.count
+              };
+            }
+        )
+          .filter(Boolean);
+        
+        setSuperAttacks(mappedSuperAttacks);
       });
 
       newConnection.on("AvailableShipsForConfiguration", (shipConfig) => {
@@ -182,14 +206,15 @@ export const App = () => {
     try {
       await connection.invoke("SetPlayerToReady");
       console.log("SetPlayerToReady invoked");
+      setIsPlayerReady(true);
     } catch (error) {
       console.log("Error SetPlayerToReady", error);
     }
   }
 
-  const attackCell = async (x, y) => {
+  const attackCell = async (x, y, attackType = 1) => {
     try {
-      await connection.invoke("AttackCell", x, y);
+      await connection.invoke("AttackCell", x, y, attackType);
       console.log("attackCell invoked");
     } catch (error) {
       console.log("Error attackCell", error);
@@ -232,6 +257,8 @@ export const App = () => {
           setTimer={setTimer}
           turnEndTime={turnEndTime}
           playerTurnTimeEnded={playerTurnTimeEnded}
+          superAttacks={superAttacks}
+          isPlayerReady={isPlayerReady}
         />
       )}
     </>

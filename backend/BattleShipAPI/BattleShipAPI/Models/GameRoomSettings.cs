@@ -1,15 +1,22 @@
 using BattleShipAPI.Enums;
+using BattleShipAPI.GameItems.Boards;
+using BattleShipAPI.GameItems.Ships;
+using BattleShipAPI.GameItems.SuperAttacks;
 
 namespace BattleShipAPI.Models;
 
 public class GameRoomSettings
 {
-    public List<ShipConfig> ShipsConfig { get; set; } =
-    [
-        new ShipConfig() { ShipType = ShipType.Battleship, Count = 1 },
-        new ShipConfig() { ShipType = ShipType.Destroyer, Count = 1 },
-        new ShipConfig() { ShipType = ShipType.Submarine, Count = 1 },
-        new ShipConfig() { ShipType = ShipType.Carrier, Count = 1 },
-        new ShipConfig() { ShipType = ShipType.Cruiser, Count = 1 }
-    ];
+    public Ships Ships { get; }
+    
+    public SuperAttacks SuperAttacks { get; }
+    
+    public Board Board { get; }
+    
+    public GameRoomSettings(Ships ships, SuperAttacks superAttacks, Board board)
+    {
+        Ships = ships;
+        SuperAttacks = superAttacks;
+        Board = board;
+    }
 }

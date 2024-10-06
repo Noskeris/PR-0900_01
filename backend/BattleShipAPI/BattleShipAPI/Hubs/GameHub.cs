@@ -1,8 +1,8 @@
 ﻿using BattleShipAPI.Enums;
+using BattleShipAPI.Factories;
+using BattleShipAPI.GameItems.Boards;
 using BattleShipAPI.Models;
 using BattleShipAPI.Repository;
-using Microsoft.AspNet.SignalR.Infrastructure;
-using Microsoft.AspNet.SignalR.Messaging;
 using Microsoft.AspNetCore.SignalR;
 
 namespace BattleShipAPI.Hubs
@@ -12,7 +12,11 @@ namespace BattleShipAPI.Hubs
         private readonly InMemoryDB _db;
         private readonly int timeForTurn = 30;
 
-        public GameHub(InMemoryDB db) => _db = db;
+        public GameHub()
+        {
+            //1. DESIGN PATTERN: Singleton
+            _db = InMemoryDB.Instance;
+        }
 
         public async Task JoinSpecificGameRoom(UserConnection connection)
         {
@@ -46,6 +50,7 @@ namespace BattleShipAPI.Hubs
             {
                 connection.IsModerator = true;
                 _db.GameRooms[connection.GameRoomName] = new GameRoom() { Name = connection.GameRoomName };
+                
                 await Clients.Caller.SendAsync("AvailableShipsForConfiguration", new List<Ship>()
                 {
                     new() { ShipType = ShipType.Carrier, Size = 5 },
@@ -71,79 +76,24 @@ namespace BattleShipAPI.Hubs
                 && gameRoom.State == GameState.NotStarted
                 && connection.IsModerator)
             {
-                Board gameBoard;
-
                 var players = _db.Connections.Values.Where(c => c.GameRoomName == connection.GameRoomName).ToList();
 
                 if (players.Count == 0)
                     return;
 
-                switch (players.Count)
-                {
-                    case 2:
-                        gameBoard = new Board(20, 10);
-                        var player1Of2 = players[0];
-                        var player2Of2 = players[1];
-
-                        gameBoard.AssignBoardSection(0, 0, 9, 9, player1Of2.PlayerId);
-                        gameBoard.AssignBoardSection(10, 0, 19, 9, player2Of2.PlayerId);
-
-                        gameRoom.Board = gameBoard;
-                        break;
-
-                    case 3:
-                        gameBoard = new Board(30, 10);
-                        var player1Of3 = players[0];
-                        var player2Of3 = players[1];
-                        var player3Of3 = players[2];
-
-                        gameBoard.AssignBoardSection(0, 0, 9, 9, player1Of3.PlayerId);
-                        gameBoard.AssignBoardSection(10, 0, 19, 9, player2Of3.PlayerId);
-                        gameBoard.AssignBoardSection(20, 0, 29, 9, player3Of3.PlayerId);
-
-                        gameRoom.Board = gameBoard;
-                        break;
-
-                    case 4:
-                        gameBoard = new Board(20, 20);
-                        var player1Of4 = players[0];
-                        var player2Of4 = players[1];
-                        var player3Of4 = players[2];
-                        var player4Of4 = players[3];
-
-                        gameBoard.AssignBoardSection(0, 0, 9, 9, player1Of4.PlayerId);
-                        gameBoard.AssignBoardSection(0, 10, 9, 19, player2Of4.PlayerId);
-                        gameBoard.AssignBoardSection(10, 0, 19, 9, player3Of4.PlayerId);
-                        gameBoard.AssignBoardSection(10, 10, 19, 19, player4Of4.PlayerId);
-
-                        gameRoom.Board = gameBoard;
-                        break;
-
-                    default:
-                        return;
-                }
+                var gameRoomSettings = GameRoomSettingsCreator
+                    .GetGameFactory(players)
+                    .BuildGameRoomSettings();
+                
+                gameRoom.SetSettings(gameRoomSettings);
 
                 gameRoom.State = GameState.PlacingShips;
                 _db.GameRooms[gameRoom.Name] = gameRoom;
 
                 Console.WriteLine($"Game state changed to: {gameRoom.State}");
-                await Clients.Group(gameRoom.Name).SendAsync("UpdatedShipsConfig", gameRoom.Settings.ShipsConfig);
+                await Clients.Group(gameRoom.Name).SendAsync("UpdatedShipsConfig", gameRoom.ShipsConfig);
                 await Clients.Group(gameRoom.Name).SendAsync("GameStateChanged", (int)gameRoom.State);
                 await Clients.Group(gameRoom.Name).SendAsync("BoardGenerated", gameRoom.Name, gameRoom.Board);
-            }
-        }
-
-        public async Task SetGameRoomSettings(GameRoomSettings roomSettings)
-        {
-            if (_db.Connections.TryGetValue(Context.ConnectionId, out var connection)
-                && _db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom)
-                && gameRoom.State == GameState.NotStarted
-                && connection.IsModerator)
-            {
-                gameRoom.Settings = roomSettings;
-                _db.GameRooms[connection.GameRoomName] = gameRoom;
-
-                await Clients.Caller.SendAsync("GameSettingsSaved", "Game settings saved successfully.");
             }
         }
 
@@ -155,7 +105,7 @@ namespace BattleShipAPI.Hubs
             {
                 var board = gameRoom.Board;
                 var player = _db.Connections[Context.ConnectionId];
-                var shipConfig = gameRoom.Settings.ShipsConfig
+                var shipConfig = gameRoom.ShipsConfig
                     .FirstOrDefault(x => x.ShipType == placedShip.ShipType);
 
                 if (shipConfig == null)
@@ -182,12 +132,11 @@ namespace BattleShipAPI.Hubs
                 }
 
                 player.PlacedShips.Add(placedShip);
-                gameRoom.Board = board;
                 _db.GameRooms[gameRoom.Name] = gameRoom;
                 _db.Connections[Context.ConnectionId] = player;
 
                 await Clients.Caller.SendAsync("UpdatedShipsConfig",
-                    player.GetAllowedShipsConfig(gameRoom.Settings.ShipsConfig));
+                    player.GetAllowedShipsConfig(gameRoom.ShipsConfig));
                 await Clients.Group(gameRoom.Name).SendAsync("BoardUpdated", gameRoom.Name, gameRoom.Board);
             }
         }
@@ -198,7 +147,7 @@ namespace BattleShipAPI.Hubs
                 && _db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom)
                 && gameRoom.State == GameState.PlacingShips)
             {
-                if (connection.GetAllowedShipsConfig(gameRoom.Settings.ShipsConfig).Any(x => x.Count != 0))
+                if (connection.GetAllowedShipsConfig(gameRoom.ShipsConfig).Any(x => x.Count != 0))
                 {
                     await Clients.Caller.SendAsync("PlayerNotReady", "You have not placed all your ships.");
                     return;
@@ -236,6 +185,8 @@ namespace BattleShipAPI.Hubs
 
                 _db.GameRooms[connection.GameRoomName] = gameRoom;
 
+                await Clients.Group(gameRoom.Name).SendAsync("UpdatedSuperAttacksConfig", gameRoom.SuperAttacksConfig);
+
                 Console.WriteLine($"Game state changed to: {gameRoom.State}");
                 await Clients.Group(gameRoom.Name).SendAsync("GameStateChanged", (int)gameRoom.State);
 
@@ -248,6 +199,7 @@ namespace BattleShipAPI.Hubs
         {
             if (_db.Connections.TryGetValue(Context.ConnectionId, out var connection)
                 && _db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom)
+                && gameRoom.TurnPlayerId.Equals(connection.PlayerId)
                 && gameRoom.State == GameState.InProgress)
             {
                 _db.GameRooms[connection.GameRoomName] = gameRoom;
@@ -258,7 +210,7 @@ namespace BattleShipAPI.Hubs
             }
         }
 
-        public async Task AttackCell(int x, int y)
+        public async Task AttackCell(int x, int y, AttackType attackType = AttackType.Normal)
         {
             if (_db.Connections.TryGetValue(Context.ConnectionId, out var connection)
                 && _db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom)
@@ -279,46 +231,25 @@ namespace BattleShipAPI.Hubs
                     await Clients.Caller.SendAsync("FailedToAttackCell", "This territory has already been attacked.");
                     return;
                 }
-
-                if (cell.State == CellState.HasShip)
+                
+                if (!connection.TryUseSuperAttack(attackType, gameRoom.SuperAttacksConfig))
                 {
-                    var cellOwner = players.First(p => p.PlayerId == cell.OwnerId);
-
-                    if (!gameRoom.TryFullySinkShip(x, y, cellOwner))
-                    {
-                        await Clients.Group(gameRoom.Name).SendAsync("AttackResult", $"{connection.Username} hit the ship!");
-                    }
-                    else
-                    {
-                        await Clients.Group(gameRoom.Name).SendAsync("AttackResult", $"{connection.Username} sunk the ship!");
-
-                        if (!gameRoom.HasAliveShips(cellOwner))
-                        {
-                            cellOwner.CanPlay = false;
-                            _db.Connections[cellOwner.PlayerId] = cellOwner;
-
-                            await Clients.Group(gameRoom.Name).SendAsync("GameLostResult", $"{cellOwner.Username}", "lost the game!");
-                        }
-
-                        if (players
-                            .Where(p => p.PlayerId != connection.PlayerId)
-                            .All(p => !p.CanPlay))
-                        {
-                            gameRoom.State = GameState.Finished;
-                            await Clients.Group(gameRoom.Name).SendAsync("WinnerResult", $"{connection.Username}", "won the game!");
-                            await Clients.Group(gameRoom.Name).SendAsync("GameStateChanged", (int)gameRoom.State);
-                        }
-                    }
-
-                    await Clients.Group(gameRoom.Name).SendAsync("BoardUpdated", gameRoom.Name, gameRoom.Board);
+                    await Clients.Caller.SendAsync("FailedToAttackCell", "Invalid attack type.");
+                    return;
                 }
-                else
+                
+                _db.Connections[Context.ConnectionId] = connection;
+
+                await Clients.Caller.SendAsync("UpdatedSuperAttacksConfig", connection.GetAllowedSuperAttacksConfig(gameRoom.SuperAttacksConfig));
+
+                var attackCells = GetAttackCells(x, y, gameRoom, connection, attackType);
+
+                foreach (var (xCell, yCell)  in attackCells)
                 {
-                    cell.State = CellState.Missed;
-
-                    await Clients.Group(gameRoom.Name).SendAsync("BoardUpdated", gameRoom.Name, gameRoom.Board);
-                    await Clients.Group(gameRoom.Name).SendAsync("AttackResult", $"{connection.Username} missed!");
+                    await AttackCellByOne(xCell, yCell, players, gameRoom, connection);
                 }
+                
+                await Clients.Group(gameRoom.Name).SendAsync("BoardUpdated", gameRoom.Name, gameRoom.Board);
 
                 if (gameRoom.State != GameState.Finished)
                 {
@@ -327,6 +258,169 @@ namespace BattleShipAPI.Hubs
                 }
 
                 _db.GameRooms[gameRoom.Name] = gameRoom;
+            }
+        }
+
+        private List<Tuple<int, int>> GetAttackCells(
+            int x,
+            int y,
+            GameRoom gameRoom,
+            UserConnection connection,
+            AttackType attackType)
+        {
+            var attackCells = new List<Tuple<int, int>>();
+
+            switch (attackType)
+            {
+                case AttackType.Normal:
+                    attackCells.Add(new Tuple<int, int>(x, y));
+                    break;
+                
+                case AttackType.Plus:
+                    attackCells.Add(new Tuple<int, int>(x, y));
+                    
+                    if (x - 1 >= 0 && CanCellBeAttacked(x - 1, y, gameRoom, connection))
+                    {
+                        attackCells.Add(new Tuple<int, int>(x - 1, y));
+                    }
+
+                    if (x + 1 < gameRoom.Board.XLength && CanCellBeAttacked(x + 1, y, gameRoom, connection))
+                    {
+                        attackCells.Add(new Tuple<int, int>(x + 1, y));
+                    }
+
+                    if (y - 1 >= 0 && CanCellBeAttacked(x, y - 1, gameRoom, connection))
+                    {
+                        attackCells.Add(new Tuple<int, int>(x, y - 1));
+                    }
+
+                    if (y + 1 < gameRoom.Board.YLength && CanCellBeAttacked(x, y + 1, gameRoom, connection))
+                    {
+                        attackCells.Add(new Tuple<int, int>(x, y + 1));
+                    }
+
+                    break;
+                
+                case AttackType.Cross:
+                    attackCells.Add(new Tuple<int, int>(x, y));
+
+                    if (x - 1 >= 0 && y - 1 >= 0 && CanCellBeAttacked(x - 1, y - 1, gameRoom, connection))
+                    {
+                        attackCells.Add(new Tuple<int, int>(x - 1, y - 1));
+                    }
+
+                    if (x + 1 < gameRoom.Board.XLength && y + 1 < gameRoom.Board.YLength && CanCellBeAttacked(x + 1, y + 1, gameRoom, connection))
+                    {
+                        attackCells.Add(new Tuple<int, int>(x + 1, y + 1));
+                    }
+
+                    if (x - 1 >= 0 && y + 1 < gameRoom.Board.YLength && CanCellBeAttacked(x - 1, y + 1, gameRoom, connection))
+                    {
+                        attackCells.Add(new Tuple<int, int>(x - 1, y + 1));
+                    }
+
+                    if (x + 1 < gameRoom.Board.XLength && y - 1 >= 0 && CanCellBeAttacked(x + 1, y - 1, gameRoom, connection))
+                    {
+                        attackCells.Add(new Tuple<int, int>(x + 1, y - 1));
+                    }
+
+                    break;
+
+                case AttackType.Boom:
+                    attackCells.Add(new Tuple<int, int>(x, y));
+                    if (x - 1 >= 0 && CanCellBeAttacked(x - 1, y, gameRoom, connection))
+                    {
+                        attackCells.Add(new Tuple<int, int>(x - 1, y));
+                    }
+
+                    if (x + 1 < gameRoom.Board.XLength && CanCellBeAttacked(x + 1, y, gameRoom, connection))
+                    {
+                        attackCells.Add(new Tuple<int, int>(x + 1, y));
+                    }
+
+                    if (y - 1 >= 0 && CanCellBeAttacked(x, y - 1, gameRoom, connection))
+                    {
+                        attackCells.Add(new Tuple<int, int>(x, y - 1));
+                    }
+
+                    if (y + 1 < gameRoom.Board.YLength && CanCellBeAttacked(x, y + 1, gameRoom, connection))
+                    {
+                        attackCells.Add(new Tuple<int, int>(x, y + 1));
+                    }
+
+                    if (x - 1 >= 0 && y - 1 >= 0 && CanCellBeAttacked(x - 1, y - 1, gameRoom, connection))
+                    {
+                        attackCells.Add(new Tuple<int, int>(x - 1, y - 1));
+                    }
+
+                    if (x + 1 < gameRoom.Board.XLength && y + 1 < gameRoom.Board.YLength && CanCellBeAttacked(x + 1, y + 1, gameRoom, connection))
+                    {
+                        attackCells.Add(new Tuple<int, int>(x + 1, y + 1));
+                    }
+
+                    if (x - 1 >= 0 && y + 1 < gameRoom.Board.YLength && CanCellBeAttacked(x - 1, y + 1, gameRoom, connection))
+                    {
+                        attackCells.Add(new Tuple<int, int>(x - 1, y + 1));
+                    }
+
+                    if (x + 1 < gameRoom.Board.XLength && y - 1 >= 0 && CanCellBeAttacked(x + 1, y - 1, gameRoom, connection))
+                    {
+                        attackCells.Add(new Tuple<int, int>(x + 1, y - 1));
+                    }
+
+                    break;
+            }
+
+            return attackCells;
+        }
+        
+        private bool CanCellBeAttacked(int x, int y, GameRoom gameRoom, UserConnection connection)
+        {
+            return x >= 0 && x < gameRoom.Board.XLength && y >= 0 && y < gameRoom.Board.YLength &&
+                   gameRoom.Board.Cells[x][y].OwnerId != connection.PlayerId &&
+                   gameRoom.Board.Cells[x][y].State != CellState.DamagedShip &&
+                   gameRoom.Board.Cells[x][y].State != CellState.SunkenShip &&
+                   gameRoom.Board.Cells[x][y].State != CellState.Missed;
+        }
+
+        private async Task AttackCellByOne(int x, int y, List<UserConnection> players, GameRoom gameRoom, UserConnection connection)
+        {
+            var cell = gameRoom.Board.Cells[x][y];
+
+            if (cell.State == CellState.HasShip)
+            {
+                var cellOwner = players.First(p => p.PlayerId == cell.OwnerId);
+
+                if (!gameRoom.TryFullySinkShip(x, y, cellOwner))
+                {
+                    await Clients.Group(gameRoom.Name).SendAsync("AttackResult", $"{connection.Username} hit the ship!");
+                }
+                else
+                {
+                    await Clients.Group(gameRoom.Name).SendAsync("AttackResult", $"{connection.Username} sunk the ship!");
+
+                    if (!gameRoom.HasAliveShips(cellOwner))
+                    {
+                        cellOwner.CanPlay = false;
+                        _db.Connections[cellOwner.PlayerId] = cellOwner;
+
+                        await Clients.Group(gameRoom.Name).SendAsync("GameLostResult", $"{cellOwner.Username}", "lost the game!");
+                    }
+
+                    if (players
+                        .Where(p => p.PlayerId != connection.PlayerId)
+                        .All(p => !p.CanPlay))
+                    {
+                        gameRoom.State = GameState.Finished;
+                        await Clients.Group(gameRoom.Name).SendAsync("WinnerResult", $"{connection.Username}", "won the game!");
+                        await Clients.Group(gameRoom.Name).SendAsync("GameStateChanged", (int)gameRoom.State);
+                    }
+                }
+            }
+            else
+            {
+                cell.State = CellState.Missed;
+                await Clients.Group(gameRoom.Name).SendAsync("AttackResult", $"{connection.Username} missed!");
             }
         }
 
@@ -458,7 +552,7 @@ namespace BattleShipAPI.Hubs
                     .ToList()
                     .ForEach(x => _db.Connections.Remove(x.PlayerId, out _));
 
-                gameRoom = new GameRoom() { Name = gameRoom.Name, Settings = gameRoom.Settings };
+                gameRoom = new GameRoom() { Name = gameRoom.Name };
                 _db.GameRooms[gameRoom.Name] = gameRoom;
 
 
@@ -470,6 +564,7 @@ namespace BattleShipAPI.Hubs
                         _db.Connections[x.PlayerId].CanPlay = false;
                         _db.Connections[x.PlayerId].HasDisconnected = false;
                         _db.Connections[x.PlayerId].PlacedShips.Clear();
+                        _db.Connections[x.PlayerId].UsedSuperAttacks.Clear();
                     });
 
                 await Clients.Group(gameRoom.Name).SendAsync("GameStateChanged", (int)gameRoom.State);
@@ -483,7 +578,7 @@ namespace BattleShipAPI.Hubs
                     new() { ShipType = ShipType.Destroyer, Size = 1 }
                 });
 
-                await Clients.Client(connection.PlayerId).SendAsync("CurrentGameConfiguration", gameRoom.Settings);
+                await Clients.Client(connection.PlayerId).SendAsync("CurrentGameConfiguration", gameRoom.ShipsConfig);
             }
         }
     }

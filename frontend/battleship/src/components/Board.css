@@ -91,3 +91,20 @@
   background-color: var(--oc-orange-3);
   border: 1px solid var(--oc-orange-4);
 }
+
+#play-button {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+#play-button:disabled {
+  background-color: #ccc;
+  color: #666;
+  cursor: not-allowed;
+  opacity: 0.6;
+}

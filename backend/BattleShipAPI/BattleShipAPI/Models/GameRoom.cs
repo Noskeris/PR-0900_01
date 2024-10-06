@@ -1,18 +1,39 @@
 ﻿using BattleShipAPI.Enums;
+using BattleShipAPI.GameItems.Boards;
+using BattleShipAPI.GameItems.Ships;
+using BattleShipAPI.GameItems.SuperAttacks;
 
 namespace BattleShipAPI.Models
 {
     public class GameRoom
     {
+        public GameRoom()
+        {
+            
+        }
+
         public string Name { get; set; } = string.Empty;
 
         public GameState State { get; set; } = GameState.NotStarted;
 
-        public GameRoomSettings Settings { get; set; } = new();
-
-        public Board Board { get; set; } = new();
+        public Board Board { get; private set; }
+        
+        public List<ShipConfig> ShipsConfig { get; private set; }
+    
+        public List<SuperAttackConfig> SuperAttacksConfig { get; private set; }
 
         public string TurnPlayerId { get; private set; } = string.Empty;
+
+        private bool AreSettingsSet = false;
+        
+        public void SetSettings(GameRoomSettings settings)
+        {
+            Board = settings.Board;
+            ShipsConfig = settings.Ships.ShipsConfig;
+            SuperAttacksConfig = settings.SuperAttacks.SuperAttacksConfig;
+            
+            AreSettingsSet = true;
+        }
 
         public string GetNextTurnPlayerId(List<UserConnection> players)
         {

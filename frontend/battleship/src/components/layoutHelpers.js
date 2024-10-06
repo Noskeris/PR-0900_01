@@ -120,3 +120,87 @@ export const putEntityInLayout = (cells, entity, type) => {
 
   return cells;
 };
+
+export const calculateAttackTypeHover = (cells, playerId, x, y, attackType) => {
+  const element = document.getElementById(`${x}-${y}`);
+  const classList = element.classList;
+
+  if(cells[x][y].ownerId === playerId || (!classList.contains("defaultcell") && !classList.contains("hoverOver") ))
+  {
+    return cells;
+  }
+
+  const updatedCells = cells.map(row => row.map(cell => ({ ...cell }))); // Create a deep copy of the cells
+
+  const applyHoverOver = (newX, newY) => {
+    if (
+      newX >= 0 &&
+      newX < updatedCells.length &&         // Check if newX is within the row length
+      newY >= 0 &&
+      newY < updatedCells[0].length &&      // Check if newY is within the column length
+      updatedCells[newX][newY].ownerId !== playerId // Check if the cell is not owned by the player
+    ) {
+      const element = document.getElementById(`${newX}-${newY}`);
+      const classList = element.classList;
+
+      // Apply hover effect only if the cell is in default or hover state
+      if (classList.contains("defaultcell") || classList.contains("hoverOver")) {
+        updatedCells[newX][newY].state = "hoverOver";
+      }
+    }
+  };
+
+  if (attackType === "plus") {
+    const directions = [
+      { dx: 0, dy: 0 },    // Center (x, y)
+      { dx: -1, dy: 0 },   // Left (x-1, y)
+      { dx: 1, dy: 0 },    // Right (x+1, y)
+      { dx: 0, dy: -1 },   // Up (x, y-1)
+      { dx: 0, dy: 1 },    // Down (x, y+1)
+    ];
+
+    directions.forEach(({ dx, dy }) => {
+      const newX = x + dx;
+      const newY = y + dy;
+      applyHoverOver(newX, newY);
+    });
+  }
+
+  if (attackType === "cross") {
+    const directions = [
+      { dx: 0, dy: 0 },    // Center (x, y)
+      { dx: -1, dy: -1 },  // Top-left (x-1, y-1)
+      { dx: 1, dy: -1 },   // Top-right (x+1, y-1)
+      { dx: -1, dy: 1 },   // Bottom-left (x-1, y+1)
+      { dx: 1, dy: 1 },    // Bottom-right (x+1, y+1)
+    ];
+
+    directions.forEach(({ dx, dy }) => {
+      const newX = x + dx;
+      const newY = y + dy;
+      applyHoverOver(newX, newY);
+    });
+  }
+
+  if (attackType === "boom") {
+    const directions = [
+      { dx: 0, dy: 0 },    // Center (x, y)
+      { dx: -1, dy: -1 },  // Top-left (x-1, y-1)
+      { dx: 0, dy: -1 },   // Top (x, y-1)
+      { dx: 1, dy: -1 },   // Top-right (x+1, y-1)
+      { dx: -1, dy: 0 },   // Left (x-1, y)
+      { dx: 1, dy: 0 },    // Right (x+1, y)
+      { dx: -1, dy: 1 },   // Bottom-left (x-1, y+1)
+      { dx: 0, dy: 1 },    // Bottom (x, y+1)
+      { dx: 1, dy: 1 },    // Bottom-right (x+1, y+1)
+    ];
+
+    directions.forEach(({ dx, dy }) => {
+      const newX = x + dx;
+      const newY = y + dy;
+      applyHoverOver(newX, newY);
+    });
+  }
+
+  return updatedCells;
+};
