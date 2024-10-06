@@ -295,45 +295,14 @@ namespace BattleShipAPI.Hubs
 
                 await Clients.Caller.SendAsync("UpdatedSuperAttacksConfig", connection.GetAllowedSuperAttacksConfig(gameRoom.Settings.SuperAttacksConfig));
 
-                if (cell.State == CellState.HasShip)
+                var attackCells = GetAttackCells(x, y, gameRoom, connection, attackType);
+
+                foreach (var (xCell, yCell)  in attackCells)
                 {
-                    var cellOwner = players.First(p => p.PlayerId == cell.OwnerId);
-
-                    if (!gameRoom.TryFullySinkShip(x, y, cellOwner))
-                    {
-                        await Clients.Group(gameRoom.Name).SendAsync("AttackResult", $"{connection.Username} hit the ship!");
-                    }
-                    else
-                    {
-                        await Clients.Group(gameRoom.Name).SendAsync("AttackResult", $"{connection.Username} sunk the ship!");
-
-                        if (!gameRoom.HasAliveShips(cellOwner))
-                        {
-                            cellOwner.CanPlay = false;
-                            _db.Connections[cellOwner.PlayerId] = cellOwner;
-
-                            await Clients.Group(gameRoom.Name).SendAsync("GameLostResult", $"{cellOwner.Username}", "lost the game!");
-                        }
-
-                        if (players
-                            .Where(p => p.PlayerId != connection.PlayerId)
-                            .All(p => !p.CanPlay))
-                        {
-                            gameRoom.State = GameState.Finished;
-                            await Clients.Group(gameRoom.Name).SendAsync("WinnerResult", $"{connection.Username}", "won the game!");
-                            await Clients.Group(gameRoom.Name).SendAsync("GameStateChanged", (int)gameRoom.State);
-                        }
-                    }
-
-                    await Clients.Group(gameRoom.Name).SendAsync("BoardUpdated", gameRoom.Name, gameRoom.Board);
+                    await AttackCell(xCell, yCell, players, gameRoom, connection);
                 }
-                else
-                {
-                    cell.State = CellState.Missed;
-
-                    await Clients.Group(gameRoom.Name).SendAsync("BoardUpdated", gameRoom.Name, gameRoom.Board);
-                    await Clients.Group(gameRoom.Name).SendAsync("AttackResult", $"{connection.Username} missed!");
-                }
+                
+                await Clients.Group(gameRoom.Name).SendAsync("BoardUpdated", gameRoom.Name, gameRoom.Board);
 
                 if (gameRoom.State != GameState.Finished)
                 {
@@ -342,6 +311,169 @@ namespace BattleShipAPI.Hubs
                 }
 
                 _db.GameRooms[gameRoom.Name] = gameRoom;
+            }
+        }
+
+        private List<Tuple<int, int>> GetAttackCells(
+            int x,
+            int y,
+            GameRoom gameRoom,
+            UserConnection connection,
+            AttackType attackType)
+        {
+            var attackCells = new List<Tuple<int, int>>();
+
+            switch (attackType)
+            {
+                case AttackType.Normal:
+                    attackCells.Add(new Tuple<int, int>(x, y));
+                    break;
+                
+                case AttackType.Plus:
+                    attackCells.Add(new Tuple<int, int>(x, y));
+                    
+                    if (x - 1 >= 0 && CanCellBeAttacked(x - 1, y, gameRoom, connection))
+                    {
+                        attackCells.Add(new Tuple<int, int>(x - 1, y));
+                    }
+
+                    if (x + 1 < gameRoom.Board.XLength && CanCellBeAttacked(x + 1, y, gameRoom, connection))
+                    {
+                        attackCells.Add(new Tuple<int, int>(x + 1, y));
+                    }
+
+                    if (y - 1 >= 0 && CanCellBeAttacked(x, y - 1, gameRoom, connection))
+                    {
+                        attackCells.Add(new Tuple<int, int>(x, y - 1));
+                    }
+
+                    if (y + 1 < gameRoom.Board.YLength && CanCellBeAttacked(x, y + 1, gameRoom, connection))
+                    {
+                        attackCells.Add(new Tuple<int, int>(x, y + 1));
+                    }
+
+                    break;
+                
+                case AttackType.Cross:
+                    attackCells.Add(new Tuple<int, int>(x, y));
+
+                    if (x - 1 >= 0 && y - 1 >= 0 && CanCellBeAttacked(x - 1, y - 1, gameRoom, connection))
+                    {
+                        attackCells.Add(new Tuple<int, int>(x - 1, y - 1));
+                    }
+
+                    if (x + 1 < gameRoom.Board.XLength && y + 1 < gameRoom.Board.YLength && CanCellBeAttacked(x + 1, y + 1, gameRoom, connection))
+                    {
+                        attackCells.Add(new Tuple<int, int>(x + 1, y + 1));
+                    }
+
+                    if (x - 1 >= 0 && y + 1 < gameRoom.Board.YLength && CanCellBeAttacked(x - 1, y + 1, gameRoom, connection))
+                    {
+                        attackCells.Add(new Tuple<int, int>(x - 1, y + 1));
+                    }
+
+                    if (x + 1 < gameRoom.Board.XLength && y - 1 >= 0 && CanCellBeAttacked(x + 1, y - 1, gameRoom, connection))
+                    {
+                        attackCells.Add(new Tuple<int, int>(x + 1, y - 1));
+                    }
+
+                    break;
+
+                case AttackType.Boom:
+                    attackCells.Add(new Tuple<int, int>(x, y));
+                    if (x - 1 >= 0 && CanCellBeAttacked(x - 1, y, gameRoom, connection))
+                    {
+                        attackCells.Add(new Tuple<int, int>(x - 1, y));
+                    }
+
+                    if (x + 1 < gameRoom.Board.XLength && CanCellBeAttacked(x + 1, y, gameRoom, connection))
+                    {
+                        attackCells.Add(new Tuple<int, int>(x + 1, y));
+                    }
+
+                    if (y - 1 >= 0 && CanCellBeAttacked(x, y - 1, gameRoom, connection))
+                    {
+                        attackCells.Add(new Tuple<int, int>(x, y - 1));
+                    }
+
+                    if (y + 1 < gameRoom.Board.YLength && CanCellBeAttacked(x, y + 1, gameRoom, connection))
+                    {
+                        attackCells.Add(new Tuple<int, int>(x, y + 1));
+                    }
+
+                    if (x - 1 >= 0 && y - 1 >= 0 && CanCellBeAttacked(x - 1, y - 1, gameRoom, connection))
+                    {
+                        attackCells.Add(new Tuple<int, int>(x - 1, y - 1));
+                    }
+
+                    if (x + 1 < gameRoom.Board.XLength && y + 1 < gameRoom.Board.YLength && CanCellBeAttacked(x + 1, y + 1, gameRoom, connection))
+                    {
+                        attackCells.Add(new Tuple<int, int>(x + 1, y + 1));
+                    }
+
+                    if (x - 1 >= 0 && y + 1 < gameRoom.Board.YLength && CanCellBeAttacked(x - 1, y + 1, gameRoom, connection))
+                    {
+                        attackCells.Add(new Tuple<int, int>(x - 1, y + 1));
+                    }
+
+                    if (x + 1 < gameRoom.Board.XLength && y - 1 >= 0 && CanCellBeAttacked(x + 1, y - 1, gameRoom, connection))
+                    {
+                        attackCells.Add(new Tuple<int, int>(x + 1, y - 1));
+                    }
+
+                    break;
+            }
+
+            return attackCells;
+        }
+        
+        private bool CanCellBeAttacked(int x, int y, GameRoom gameRoom, UserConnection connection)
+        {
+            return x >= 0 && x < gameRoom.Board.XLength && y >= 0 && y < gameRoom.Board.YLength &&
+                   gameRoom.Board.Cells[x][y].OwnerId != connection.PlayerId &&
+                   gameRoom.Board.Cells[x][y].State != CellState.DamagedShip &&
+                   gameRoom.Board.Cells[x][y].State != CellState.SunkenShip &&
+                   gameRoom.Board.Cells[x][y].State != CellState.Missed;
+        }
+
+        private async Task AttackCell(int x, int y, List<UserConnection> players, GameRoom gameRoom, UserConnection connection)
+        {
+            var cell = gameRoom.Board.Cells[x][y];
+
+            if (cell.State == CellState.HasShip)
+            {
+                var cellOwner = players.First(p => p.PlayerId == cell.OwnerId);
+
+                if (!gameRoom.TryFullySinkShip(x, y, cellOwner))
+                {
+                    await Clients.Group(gameRoom.Name).SendAsync("AttackResult", $"{connection.Username} hit the ship!");
+                }
+                else
+                {
+                    await Clients.Group(gameRoom.Name).SendAsync("AttackResult", $"{connection.Username} sunk the ship!");
+
+                    if (!gameRoom.HasAliveShips(cellOwner))
+                    {
+                        cellOwner.CanPlay = false;
+                        _db.Connections[cellOwner.PlayerId] = cellOwner;
+
+                        await Clients.Group(gameRoom.Name).SendAsync("GameLostResult", $"{cellOwner.Username}", "lost the game!");
+                    }
+
+                    if (players
+                        .Where(p => p.PlayerId != connection.PlayerId)
+                        .All(p => !p.CanPlay))
+                    {
+                        gameRoom.State = GameState.Finished;
+                        await Clients.Group(gameRoom.Name).SendAsync("WinnerResult", $"{connection.Username}", "won the game!");
+                        await Clients.Group(gameRoom.Name).SendAsync("GameStateChanged", (int)gameRoom.State);
+                    }
+                }
+            }
+            else
+            {
+                cell.State = CellState.Missed;
+                await Clients.Group(gameRoom.Name).SendAsync("AttackResult", $"{connection.Username} missed!");
             }
         }
 
