@@ -1,20 +1,15 @@
 ﻿using BattleShipAPI.Enums;
+using BattleShipAPI.Models;
 
-namespace BattleShipAPI.Models
+namespace BattleShipAPI.GameItems.Boards
 {
-    public class Board
+    public abstract class Board
     {
         public int XLength { get; set; }
         
         public int YLength { get; set; }
         
         public Cell[][] Cells { get; set; }
-        
-
-        public Board()
-        {
-            
-        }
 
         public Board(int xLength, int yLength)
         {

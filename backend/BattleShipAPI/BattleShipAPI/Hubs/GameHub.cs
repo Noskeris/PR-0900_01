@@ -1,4 +1,6 @@
 ﻿using BattleShipAPI.Enums;
+using BattleShipAPI.Factories;
+using BattleShipAPI.GameItems.Boards;
 using BattleShipAPI.Models;
 using BattleShipAPI.Repository;
 using Microsoft.AspNetCore.SignalR;
@@ -48,6 +50,7 @@ namespace BattleShipAPI.Hubs
             {
                 connection.IsModerator = true;
                 _db.GameRooms[connection.GameRoomName] = new GameRoom() { Name = connection.GameRoomName };
+                
                 await Clients.Caller.SendAsync("AvailableShipsForConfiguration", new List<Ship>()
                 {
                     new() { ShipType = ShipType.Carrier, Size = 5 },
@@ -73,79 +76,24 @@ namespace BattleShipAPI.Hubs
                 && gameRoom.State == GameState.NotStarted
                 && connection.IsModerator)
             {
-                Board gameBoard;
-
                 var players = _db.Connections.Values.Where(c => c.GameRoomName == connection.GameRoomName).ToList();
 
                 if (players.Count == 0)
                     return;
 
-                switch (players.Count)
-                {
-                    case 2:
-                        gameBoard = new Board(20, 10);
-                        var player1Of2 = players[0];
-                        var player2Of2 = players[1];
-
-                        gameBoard.AssignBoardSection(0, 0, 9, 9, player1Of2.PlayerId);
-                        gameBoard.AssignBoardSection(10, 0, 19, 9, player2Of2.PlayerId);
-
-                        gameRoom.Board = gameBoard;
-                        break;
-
-                    case 3:
-                        gameBoard = new Board(30, 10);
-                        var player1Of3 = players[0];
-                        var player2Of3 = players[1];
-                        var player3Of3 = players[2];
-
-                        gameBoard.AssignBoardSection(0, 0, 9, 9, player1Of3.PlayerId);
-                        gameBoard.AssignBoardSection(10, 0, 19, 9, player2Of3.PlayerId);
-                        gameBoard.AssignBoardSection(20, 0, 29, 9, player3Of3.PlayerId);
-
-                        gameRoom.Board = gameBoard;
-                        break;
-
-                    case 4:
-                        gameBoard = new Board(20, 20);
-                        var player1Of4 = players[0];
-                        var player2Of4 = players[1];
-                        var player3Of4 = players[2];
-                        var player4Of4 = players[3];
-
-                        gameBoard.AssignBoardSection(0, 0, 9, 9, player1Of4.PlayerId);
-                        gameBoard.AssignBoardSection(0, 10, 9, 19, player2Of4.PlayerId);
-                        gameBoard.AssignBoardSection(10, 0, 19, 9, player3Of4.PlayerId);
-                        gameBoard.AssignBoardSection(10, 10, 19, 19, player4Of4.PlayerId);
-
-                        gameRoom.Board = gameBoard;
-                        break;
-
-                    default:
-                        return;
-                }
+                var gameRoomSettings = GameRoomSettingsCreator
+                    .GetGameFactory(players)
+                    .BuildGameRoomSettings();
+                
+                gameRoom.SetSettings(gameRoomSettings);
 
                 gameRoom.State = GameState.PlacingShips;
                 _db.GameRooms[gameRoom.Name] = gameRoom;
 
                 Console.WriteLine($"Game state changed to: {gameRoom.State}");
-                await Clients.Group(gameRoom.Name).SendAsync("UpdatedShipsConfig", gameRoom.Settings.ShipsConfig);
+                await Clients.Group(gameRoom.Name).SendAsync("UpdatedShipsConfig", gameRoom.ShipsConfig);
                 await Clients.Group(gameRoom.Name).SendAsync("GameStateChanged", (int)gameRoom.State);
                 await Clients.Group(gameRoom.Name).SendAsync("BoardGenerated", gameRoom.Name, gameRoom.Board);
-            }
-        }
-
-        public async Task SetGameRoomSettings(GameRoomSettings roomSettings)
-        {
-            if (_db.Connections.TryGetValue(Context.ConnectionId, out var connection)
-                && _db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom)
-                && gameRoom.State == GameState.NotStarted
-                && connection.IsModerator)
-            {
-                gameRoom.Settings = roomSettings;
-                _db.GameRooms[connection.GameRoomName] = gameRoom;
-
-                await Clients.Caller.SendAsync("GameSettingsSaved", "Game settings saved successfully.");
             }
         }
 
@@ -157,7 +105,7 @@ namespace BattleShipAPI.Hubs
             {
                 var board = gameRoom.Board;
                 var player = _db.Connections[Context.ConnectionId];
-                var shipConfig = gameRoom.Settings.ShipsConfig
+                var shipConfig = gameRoom.ShipsConfig
                     .FirstOrDefault(x => x.ShipType == placedShip.ShipType);
 
                 if (shipConfig == null)
@@ -184,12 +132,11 @@ namespace BattleShipAPI.Hubs
                 }
 
                 player.PlacedShips.Add(placedShip);
-                gameRoom.Board = board;
                 _db.GameRooms[gameRoom.Name] = gameRoom;
                 _db.Connections[Context.ConnectionId] = player;
 
                 await Clients.Caller.SendAsync("UpdatedShipsConfig",
-                    player.GetAllowedShipsConfig(gameRoom.Settings.ShipsConfig));
+                    player.GetAllowedShipsConfig(gameRoom.ShipsConfig));
                 await Clients.Group(gameRoom.Name).SendAsync("BoardUpdated", gameRoom.Name, gameRoom.Board);
             }
         }
@@ -200,7 +147,7 @@ namespace BattleShipAPI.Hubs
                 && _db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom)
                 && gameRoom.State == GameState.PlacingShips)
             {
-                if (connection.GetAllowedShipsConfig(gameRoom.Settings.ShipsConfig).Any(x => x.Count != 0))
+                if (connection.GetAllowedShipsConfig(gameRoom.ShipsConfig).Any(x => x.Count != 0))
                 {
                     await Clients.Caller.SendAsync("PlayerNotReady", "You have not placed all your ships.");
                     return;
@@ -238,7 +185,7 @@ namespace BattleShipAPI.Hubs
 
                 _db.GameRooms[connection.GameRoomName] = gameRoom;
 
-                await Clients.Group(gameRoom.Name).SendAsync("UpdatedSuperAttacksConfig", gameRoom.Settings.SuperAttacksConfig);
+                await Clients.Group(gameRoom.Name).SendAsync("UpdatedSuperAttacksConfig", gameRoom.SuperAttacksConfig);
 
                 Console.WriteLine($"Game state changed to: {gameRoom.State}");
                 await Clients.Group(gameRoom.Name).SendAsync("GameStateChanged", (int)gameRoom.State);
@@ -285,7 +232,7 @@ namespace BattleShipAPI.Hubs
                     return;
                 }
                 
-                if (!connection.TryUseSuperAttack(attackType, gameRoom.Settings.SuperAttacksConfig))
+                if (!connection.TryUseSuperAttack(attackType, gameRoom.SuperAttacksConfig))
                 {
                     await Clients.Caller.SendAsync("FailedToAttackCell", "Invalid attack type.");
                     return;
@@ -293,7 +240,7 @@ namespace BattleShipAPI.Hubs
                 
                 _db.Connections[Context.ConnectionId] = connection;
 
-                await Clients.Caller.SendAsync("UpdatedSuperAttacksConfig", connection.GetAllowedSuperAttacksConfig(gameRoom.Settings.SuperAttacksConfig));
+                await Clients.Caller.SendAsync("UpdatedSuperAttacksConfig", connection.GetAllowedSuperAttacksConfig(gameRoom.SuperAttacksConfig));
 
                 var attackCells = GetAttackCells(x, y, gameRoom, connection, attackType);
 
@@ -605,7 +552,7 @@ namespace BattleShipAPI.Hubs
                     .ToList()
                     .ForEach(x => _db.Connections.Remove(x.PlayerId, out _));
 
-                gameRoom = new GameRoom() { Name = gameRoom.Name, Settings = gameRoom.Settings };
+                gameRoom = new GameRoom() { Name = gameRoom.Name };
                 _db.GameRooms[gameRoom.Name] = gameRoom;
 
 
@@ -631,7 +578,7 @@ namespace BattleShipAPI.Hubs
                     new() { ShipType = ShipType.Destroyer, Size = 1 }
                 });
 
-                await Clients.Client(connection.PlayerId).SendAsync("CurrentGameConfiguration", gameRoom.Settings);
+                await Clients.Client(connection.PlayerId).SendAsync("CurrentGameConfiguration", gameRoom.ShipsConfig);
             }
         }
     }

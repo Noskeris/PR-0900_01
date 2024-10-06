@@ -1,5 +1,4 @@
 using BattleShipAPI.Hubs;
-using BattleShipAPI.Repository;
 
 namespace BattleShipAPI
 {
