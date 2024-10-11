@@ -51,8 +51,7 @@ const GameRoom = ({
         setTimer(timeLeft.toFixed(1));
         if (timeLeft <= 0) {
           clearInterval(interval);
-          if(playerId === playerTurn)
-          {
+          if (playerId === playerTurn) {
             playerTurnTimeEnded();
           }
         }
@@ -106,13 +105,15 @@ const GameRoom = ({
     <Box
       sx={{
         p: 5,
-        width: "70vw",
-        overflowX: "hidden",
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
       }}
     >
-      <Grid container spacing={2}>
+      <Grid container spacing={2} sx={{ flexGrow: 1, overflow: "hidden" }}>
         {/* Left Column: Game Board */}
-        <Grid item xs={12} md={8}>
+        <Grid item xs={12} md={8} sx={{ overflow: "hidden" }}>
           <Paper
             elevation={3}
             sx={{
@@ -120,6 +121,7 @@ const GameRoom = ({
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
+              overflow: "hidden",
             }}
           >
             <Typography variant="h4" align="center" gutterBottom>
@@ -129,37 +131,49 @@ const GameRoom = ({
 
             {gameState === 3 && (
               <>
-              <Typography variant="h6" color="primary" gutterBottom>
-                {playerTurn === playerId ? "Your Turn" : "Opponent's Turn"}
-              </Typography>
-              <Typography variant="h6" align="center" color="error">
-                {playerTurn === playerId ?  `Time left for turn: ${timer}` : "Waiting for opponent..."}
-              </Typography>
-              <SuperAttackSelector
+                <Typography variant="h6" color="primary" gutterBottom>
+                  {playerTurn === playerId ? "Your Turn" : "Opponent's Turn"}
+                </Typography>
+                <Typography variant="h6" align="center" color="error">
+                  {playerTurn === playerId
+                    ? `Time left for turn: ${timer}`
+                    : "Waiting for opponent..."}
+                </Typography>
+                <SuperAttackSelector
                   superAttacks={superAttacks}
                   attackType={attackType}
                   onSelectAttack={handleSelectAttack}
                 />
-            </>
+              </>
             )}
-           
+
             {board ? (
-              <Box sx={{ display: "flex", justifyContent: "center" }}>
-                <BoardComponent
-                  board={board}
-                  setBoard={setBoard}
-                  username={username}
-                  playerId={playerId}
-                  currentlyPlacing={currentlyPlacing}
-                  setCurrentlyPlacing={setCurrentlyPlacing}
-                  rotateShip={rotateShip}
-                  addShip={addShip}
-                  gameState={gameState}
-                  placeShip={placeShip}
-                  playerTurn={playerTurn}
-                  attackCell={attackCell}
-                  attackType={attackType}
-                />
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  overflow: "auto",
+                  flexGrow: 1,
+                  width: "100%",
+                }}
+              >
+                <div className="scrollable-container">
+                  <BoardComponent
+                    board={board}
+                    setBoard={setBoard}
+                    username={username}
+                    playerId={playerId}
+                    currentlyPlacing={currentlyPlacing}
+                    setCurrentlyPlacing={setCurrentlyPlacing}
+                    rotateShip={rotateShip}
+                    addShip={addShip}
+                    gameState={gameState}
+                    placeShip={placeShip}
+                    playerTurn={playerTurn}
+                    attackCell={attackCell}
+                    attackType={attackType}
+                  />
+                </div>
               </Box>
             ) : (
               <Typography variant="h6" align="center">

@@ -1,4 +1,5 @@
-﻿using BattleShipAPI.Enums;
+﻿using BattleShipAPI.AttackStrategy;
+using BattleShipAPI.Enums;
 using BattleShipAPI.Factories;
 using BattleShipAPI.GameItems.Boards;
 using BattleShipAPI.Models;
@@ -261,119 +262,31 @@ namespace BattleShipAPI.Hubs
             }
         }
 
-        private List<Tuple<int, int>> GetAttackCells(
-            int x,
-            int y,
-            GameRoom gameRoom,
-            UserConnection connection,
-            AttackType attackType)
+        private IAttackStrategy GetAttackStrategy(AttackType attackType)
         {
-            var attackCells = new List<Tuple<int, int>>();
-
-            switch (attackType)
+            return attackType switch
             {
-                case AttackType.Normal:
-                    attackCells.Add(new Tuple<int, int>(x, y));
-                    break;
-                
-                case AttackType.Plus:
-                    attackCells.Add(new Tuple<int, int>(x, y));
-                    
-                    if (x - 1 >= 0 && CanCellBeAttacked(x - 1, y, gameRoom, connection))
-                    {
-                        attackCells.Add(new Tuple<int, int>(x - 1, y));
-                    }
-
-                    if (x + 1 < gameRoom.Board.XLength && CanCellBeAttacked(x + 1, y, gameRoom, connection))
-                    {
-                        attackCells.Add(new Tuple<int, int>(x + 1, y));
-                    }
-
-                    if (y - 1 >= 0 && CanCellBeAttacked(x, y - 1, gameRoom, connection))
-                    {
-                        attackCells.Add(new Tuple<int, int>(x, y - 1));
-                    }
-
-                    if (y + 1 < gameRoom.Board.YLength && CanCellBeAttacked(x, y + 1, gameRoom, connection))
-                    {
-                        attackCells.Add(new Tuple<int, int>(x, y + 1));
-                    }
-
-                    break;
-                
-                case AttackType.Cross:
-                    attackCells.Add(new Tuple<int, int>(x, y));
-
-                    if (x - 1 >= 0 && y - 1 >= 0 && CanCellBeAttacked(x - 1, y - 1, gameRoom, connection))
-                    {
-                        attackCells.Add(new Tuple<int, int>(x - 1, y - 1));
-                    }
-
-                    if (x + 1 < gameRoom.Board.XLength && y + 1 < gameRoom.Board.YLength && CanCellBeAttacked(x + 1, y + 1, gameRoom, connection))
-                    {
-                        attackCells.Add(new Tuple<int, int>(x + 1, y + 1));
-                    }
-
-                    if (x - 1 >= 0 && y + 1 < gameRoom.Board.YLength && CanCellBeAttacked(x - 1, y + 1, gameRoom, connection))
-                    {
-                        attackCells.Add(new Tuple<int, int>(x - 1, y + 1));
-                    }
-
-                    if (x + 1 < gameRoom.Board.XLength && y - 1 >= 0 && CanCellBeAttacked(x + 1, y - 1, gameRoom, connection))
-                    {
-                        attackCells.Add(new Tuple<int, int>(x + 1, y - 1));
-                    }
-
-                    break;
-
-                case AttackType.Boom:
-                    attackCells.Add(new Tuple<int, int>(x, y));
-                    if (x - 1 >= 0 && CanCellBeAttacked(x - 1, y, gameRoom, connection))
-                    {
-                        attackCells.Add(new Tuple<int, int>(x - 1, y));
-                    }
-
-                    if (x + 1 < gameRoom.Board.XLength && CanCellBeAttacked(x + 1, y, gameRoom, connection))
-                    {
-                        attackCells.Add(new Tuple<int, int>(x + 1, y));
-                    }
-
-                    if (y - 1 >= 0 && CanCellBeAttacked(x, y - 1, gameRoom, connection))
-                    {
-                        attackCells.Add(new Tuple<int, int>(x, y - 1));
-                    }
-
-                    if (y + 1 < gameRoom.Board.YLength && CanCellBeAttacked(x, y + 1, gameRoom, connection))
-                    {
-                        attackCells.Add(new Tuple<int, int>(x, y + 1));
-                    }
-
-                    if (x - 1 >= 0 && y - 1 >= 0 && CanCellBeAttacked(x - 1, y - 1, gameRoom, connection))
-                    {
-                        attackCells.Add(new Tuple<int, int>(x - 1, y - 1));
-                    }
-
-                    if (x + 1 < gameRoom.Board.XLength && y + 1 < gameRoom.Board.YLength && CanCellBeAttacked(x + 1, y + 1, gameRoom, connection))
-                    {
-                        attackCells.Add(new Tuple<int, int>(x + 1, y + 1));
-                    }
-
-                    if (x - 1 >= 0 && y + 1 < gameRoom.Board.YLength && CanCellBeAttacked(x - 1, y + 1, gameRoom, connection))
-                    {
-                        attackCells.Add(new Tuple<int, int>(x - 1, y + 1));
-                    }
-
-                    if (x + 1 < gameRoom.Board.XLength && y - 1 >= 0 && CanCellBeAttacked(x + 1, y - 1, gameRoom, connection))
-                    {
-                        attackCells.Add(new Tuple<int, int>(x + 1, y - 1));
-                    }
-
-                    break;
-            }
-
-            return attackCells;
+                AttackType.Normal => new NormalAttackStrategy(),
+                AttackType.Plus => new PlusAttackStrategy(),
+                AttackType.Cross => new CrossAttackStrategy(),
+                AttackType.Boom => new BoomAttackStrategy(),
+                _ => throw new ArgumentOutOfRangeException(nameof(attackType), "Invalid attack type")
+            };
         }
-        
+
+
+        private List<Tuple<int, int>> GetAttackCells(
+    int x,
+    int y,
+    GameRoom gameRoom,
+    UserConnection connection,
+    AttackType attackType)
+        {
+            var strategy = GetAttackStrategy(attackType);
+            return strategy.GetAttackCells(x, y, gameRoom, connection);
+        }
+
+
         private bool CanCellBeAttacked(int x, int y, GameRoom gameRoom, UserConnection connection)
         {
             return x >= 0 && x < gameRoom.Board.XLength && y >= 0 && y < gameRoom.Board.YLength &&

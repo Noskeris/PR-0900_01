@@ -2,7 +2,6 @@
   from {
     transform: translate(30%, 17%);
   }
-
   to {
     transform: translate(-30%, -17%);
   }
@@ -12,7 +11,14 @@
   display: grid;
   gap: 0;
   overflow: auto; 
-  margin: 0 auto;
+  margin: 0;
+  width: fit-content;
+  justify-content: center;
+}
+
+.scrollable-container {
+  overflow: auto;
+  max-width: 100%;
 }
 
 @media (max-width: 600px) {
@@ -82,12 +88,12 @@
   border: 1px solid var(--oc-red-3);
 }
 
-.cell.placingShip{
+.cell.placingShip {
   background-color: var(--oc-blue-2);
   border: 1px solid var(--oc-blue-3);
 }
 
-.hoverOver{
+.hoverOver {
   background-color: var(--oc-orange-3);
   border: 1px solid var(--oc-orange-4);
 }
