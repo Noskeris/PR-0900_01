@@ -2,6 +2,7 @@
 using BattleShipAPI.Enums;
 using BattleShipAPI.Factories;
 using BattleShipAPI.GameItems.Boards;
+using BattleShipAPI.Helpers;
 using BattleShipAPI.Models;
 using BattleShipAPI.Repository;
 using Microsoft.AspNetCore.SignalR;
@@ -243,7 +244,9 @@ namespace BattleShipAPI.Hubs
 
                 await Clients.Caller.SendAsync("UpdatedSuperAttacksConfig", connection.GetAllowedSuperAttacksConfig(gameRoom.SuperAttacksConfig));
 
-                var attackCells = GetAttackCells(x, y, gameRoom, connection, attackType);
+                var strategy = GameHelper.GetAttackStrategy(attackType);
+                var context = new AttackContext(strategy);
+                var attackCells = context.ExecuteAttack(x, y, gameRoom, connection);
 
                 foreach (var (xCell, yCell)  in attackCells)
                 {
@@ -260,40 +263,6 @@ namespace BattleShipAPI.Hubs
 
                 _db.GameRooms[gameRoom.Name] = gameRoom;
             }
-        }
-
-        private IAttackStrategy GetAttackStrategy(AttackType attackType)
-        {
-            return attackType switch
-            {
-                AttackType.Normal => new NormalAttackStrategy(),
-                AttackType.Plus => new PlusAttackStrategy(),
-                AttackType.Cross => new CrossAttackStrategy(),
-                AttackType.Boom => new BoomAttackStrategy(),
-                _ => throw new ArgumentOutOfRangeException(nameof(attackType), "Invalid attack type")
-            };
-        }
-
-
-        private List<Tuple<int, int>> GetAttackCells(
-    int x,
-    int y,
-    GameRoom gameRoom,
-    UserConnection connection,
-    AttackType attackType)
-        {
-            var strategy = GetAttackStrategy(attackType);
-            return strategy.GetAttackCells(x, y, gameRoom, connection);
-        }
-
-
-        private bool CanCellBeAttacked(int x, int y, GameRoom gameRoom, UserConnection connection)
-        {
-            return x >= 0 && x < gameRoom.Board.XLength && y >= 0 && y < gameRoom.Board.YLength &&
-                   gameRoom.Board.Cells[x][y].OwnerId != connection.PlayerId &&
-                   gameRoom.Board.Cells[x][y].State != CellState.DamagedShip &&
-                   gameRoom.Board.Cells[x][y].State != CellState.SunkenShip &&
-                   gameRoom.Board.Cells[x][y].State != CellState.Missed;
         }
 
         private async Task AttackCellByOne(int x, int y, List<UserConnection> players, GameRoom gameRoom, UserConnection connection)
