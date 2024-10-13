@@ -1,4 +1,5 @@
 using BattleShipAPI.Hubs;
+using BattleShipAPI.Notifications;
 
 namespace BattleShipAPI
 {
@@ -27,7 +28,7 @@ namespace BattleShipAPI
                 });
             });
 
-            //builder.Services.AddSingleton<InMemoryDB>();
+            builder.Services.AddSingleton<INotificationService, NotificationService>();
 
             var app = builder.Build();
 
@@ -41,8 +42,7 @@ namespace BattleShipAPI
             app.UseHttpsRedirection();
 
             app.UseAuthorization();
-
-
+            
             app.MapControllers();
 
             app.MapHub<GameHub>("/Game");

@@ -1,9 +1,9 @@
 ﻿using BattleShipAPI.AttackStrategy;
 using BattleShipAPI.Enums;
 using BattleShipAPI.Factories;
-using BattleShipAPI.GameItems.Boards;
 using BattleShipAPI.Helpers;
 using BattleShipAPI.Models;
+using BattleShipAPI.Notifications;
 using BattleShipAPI.Repository;
 using Microsoft.AspNetCore.SignalR;
 
@@ -12,12 +12,14 @@ namespace BattleShipAPI.Hubs
     public class GameHub : Hub
     {
         private readonly InMemoryDB _db;
+        private readonly INotificationService _notificationService;
         private readonly int timeForTurn = 30;
 
-        public GameHub()
+        public GameHub(INotificationService notificationService)
         {
             //1. DESIGN PATTERN: Singleton
             _db = InMemoryDB.Instance;
+            _notificationService = notificationService;
         }
 
         public async Task JoinSpecificGameRoom(UserConnection connection)
@@ -25,14 +27,24 @@ namespace BattleShipAPI.Hubs
             if (_db.Connections.Values.Any(c =>
                     c.GameRoomName == connection.GameRoomName && c.Username == connection.Username))
             {
-                await Clients.Caller.SendAsync("JoinFailed", "Username already taken in this room");
+                await _notificationService.NotifyClient(
+                    Clients,
+                    Context.ConnectionId,
+                    "JoinFailed",
+                    "Username already taken in this room");
+                
                 return;
             }
 
             if (_db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom) &&
                 gameRoom.State != GameState.NotStarted)
             {
-                await Clients.Caller.SendAsync("JoinFailed", "Game has already started.");
+                await _notificationService.NotifyClient(
+                    Clients,
+                    Context.ConnectionId,
+                    "JoinFailed",
+                    "Game has already started");
+                
                 return;
             }
 
@@ -40,34 +52,61 @@ namespace BattleShipAPI.Hubs
 
             if (usersInRoom.Count == 4)
             {
-                await Clients.Caller.SendAsync("JoinFailed", "Game room is full.");
+                await _notificationService.NotifyClient(
+                    Clients,
+                    Context.ConnectionId,
+                    "JoinFailed",
+                    "Game room is full.");
+
                 return;
             }
 
             connection.PlayerId = Context.ConnectionId;
 
-            await Groups.AddToGroupAsync(Context.ConnectionId, connection.GameRoomName);
+            _notificationService.Subscribe(new Listener
+            {
+                ClientId = Context.ConnectionId,
+                GroupName = connection.GameRoomName
+            });
 
             if (usersInRoom.Count == 0)
             {
                 connection.IsModerator = true;
                 _db.GameRooms[connection.GameRoomName] = new GameRoom() { Name = connection.GameRoomName };
                 
-                await Clients.Caller.SendAsync("AvailableShipsForConfiguration", new List<Ship>()
-                {
-                    new() { ShipType = ShipType.Carrier, Size = 5 },
-                    new() { ShipType = ShipType.Battleship, Size = 4 },
-                    new() { ShipType = ShipType.Cruiser, Size = 3 },
-                    new() { ShipType = ShipType.Submarine, Size = 2 },
-                    new() { ShipType = ShipType.Destroyer, Size = 1 }
-                });
+                await _notificationService.NotifyClient(
+                    Clients,
+                    Context.ConnectionId,
+                    "AvailableShipsForConfiguration",
+                    new List<Ship>()
+                    {
+                        new() { ShipType = ShipType.Carrier, Size = 5 },
+                        new() { ShipType = ShipType.Battleship, Size = 4 },
+                        new() { ShipType = ShipType.Cruiser, Size = 3 },
+                        new() { ShipType = ShipType.Submarine, Size = 2 },
+                        new() { ShipType = ShipType.Destroyer, Size = 1 }
+                    });
             }
 
             _db.Connections[Context.ConnectionId] = connection;
 
-            await Clients.Caller.SendAsync("SetModerator", connection.IsModerator);
-            await Clients.Caller.SendAsync("ReceivePlayerId", connection.PlayerId);
-            await Clients.Group(connection.GameRoomName).SendAsync("JoinSpecificGameRoom", "admin",
+            await _notificationService.NotifyClient(
+                Clients,
+                Context.ConnectionId,
+                "SetModerator",
+                connection.IsModerator);
+            
+            await _notificationService.NotifyClient(
+                Clients,
+                Context.ConnectionId,
+                "ReceivePlayerId",
+                connection.PlayerId);
+
+            await _notificationService.NotifyGroup(
+                Clients,
+                connection.GameRoomName,
+                "JoinSpecificGameRoom",
+                "admin",
                 $"{connection.Username} has joined the game room {connection.GameRoomName}");
         }
 
@@ -78,7 +117,9 @@ namespace BattleShipAPI.Hubs
                 && gameRoom.State == GameState.NotStarted
                 && connection.IsModerator)
             {
-                var players = _db.Connections.Values.Where(c => c.GameRoomName == connection.GameRoomName).ToList();
+                var players = _db.Connections.Values
+                    .Where(c => c.GameRoomName == connection.GameRoomName)
+                    .ToList();
 
                 if (players.Count == 0)
                     return;
@@ -93,9 +134,25 @@ namespace BattleShipAPI.Hubs
                 _db.GameRooms[gameRoom.Name] = gameRoom;
 
                 Console.WriteLine($"Game state changed to: {gameRoom.State}");
-                await Clients.Group(gameRoom.Name).SendAsync("UpdatedShipsConfig", gameRoom.ShipsConfig);
-                await Clients.Group(gameRoom.Name).SendAsync("GameStateChanged", (int)gameRoom.State);
-                await Clients.Group(gameRoom.Name).SendAsync("BoardGenerated", gameRoom.Name, gameRoom.Board);
+                
+                await _notificationService.NotifyGroup(
+                    Clients,
+                    gameRoom.Name,
+                    "UpdatedShipsConfig",
+                    gameRoom.ShipsConfig);
+                
+                await _notificationService.NotifyGroup(
+                    Clients,
+                    gameRoom.Name,
+                    "GameStateChanged",
+                    (int)gameRoom.State);
+                
+                await _notificationService.NotifyGroup(
+                    Clients,
+                    gameRoom.Name,
+                    "BoardGenerated",
+                    gameRoom.Name,
+                    gameRoom.Board);
             }
         }
 
@@ -112,13 +169,23 @@ namespace BattleShipAPI.Hubs
 
                 if (shipConfig == null)
                 {
-                    await Clients.Caller.SendAsync("FailedToAddShip", "This ship is not part of the game.");
+                    await _notificationService.NotifyClient(
+                        Clients,
+                        Context.ConnectionId,
+                        "FailedToAddShip",
+                        "This ship is not part of the game.");
+                    
                     return;
                 }
 
                 if (player.PlacedShips.Count(x => x.ShipType == placedShip.ShipType) == shipConfig.Count)
                 {
-                    await Clients.Caller.SendAsync("FailedToAddShip", "No ships of this type left.");
+                    await _notificationService.NotifyClient(
+                        Clients,
+                        Context.ConnectionId,
+                        "FailedToAddShip",
+                        "No ships of this type left.");
+                    
                     return;
                 }
 
@@ -129,7 +196,12 @@ namespace BattleShipAPI.Hubs
                         placedShip.EndY,
                         player.PlayerId))
                 {
-                    await Clients.Caller.SendAsync("FailedToAddShip", "Failed to add ship to board. Please try again.");
+                    await _notificationService.NotifyClient(
+                        Clients,
+                        Context.ConnectionId,
+                        "FailedToAddShip",
+                        "Failed to add ship to board. Please try again.");
+                    
                     return;
                 }
 
@@ -137,9 +209,18 @@ namespace BattleShipAPI.Hubs
                 _db.GameRooms[gameRoom.Name] = gameRoom;
                 _db.Connections[Context.ConnectionId] = player;
 
-                await Clients.Caller.SendAsync("UpdatedShipsConfig",
+                await _notificationService.NotifyClient(
+                    Clients,
+                    Context.ConnectionId,
+                    "UpdatedShipsConfig",
                     player.GetAllowedShipsConfig(gameRoom.ShipsConfig));
-                await Clients.Group(gameRoom.Name).SendAsync("BoardUpdated", gameRoom.Name, gameRoom.Board);
+                
+                await _notificationService.NotifyGroup(
+                    Clients,
+                    gameRoom.Name,
+                    "BoardUpdated",
+                    gameRoom.Name,
+                    gameRoom.Board);
             }
         }
 
@@ -151,14 +232,23 @@ namespace BattleShipAPI.Hubs
             {
                 if (connection.GetAllowedShipsConfig(gameRoom.ShipsConfig).Any(x => x.Count != 0))
                 {
-                    await Clients.Caller.SendAsync("PlayerNotReady", "You have not placed all your ships.");
+                    await _notificationService.NotifyClient(
+                        Clients,
+                        Context.ConnectionId,
+                        "PlayerNotReady",
+                        "You have not placed all your ships.");
+                    
                     return;
                 }
 
                 connection.CanPlay = true;
                 _db.Connections[Context.ConnectionId] = connection;
 
-                await Clients.Caller.SendAsync("PlayerReady", "You are ready to start the game.");
+                await _notificationService.NotifyClient(
+                    Clients,
+                    Context.ConnectionId,
+                    "PlayerNotReady",
+                    "You are ready to start the game."); 
             }
         }
 
@@ -173,13 +263,23 @@ namespace BattleShipAPI.Hubs
 
                 if (players.Count < 2)
                 {
-                    await Clients.Caller.SendAsync("FailedToStartGame", "Not enough players to start the game.");
+                    await _notificationService.NotifyClient(
+                        Clients,
+                        Context.ConnectionId,
+                        "FailedToStartGame",
+                        "Not enough players to start the game.");
+                    
                     return;
                 }
 
                 if (players.Any(x => !x.CanPlay))
                 {
-                    await Clients.Caller.SendAsync("FailedToStartGame", "Not all players are ready.");
+                    await _notificationService.NotifyClient(
+                        Clients,
+                        Context.ConnectionId,
+                        "FailedToStartGame",
+                        "Not all players are ready.");
+
                     return;
                 }
 
@@ -187,13 +287,27 @@ namespace BattleShipAPI.Hubs
 
                 _db.GameRooms[connection.GameRoomName] = gameRoom;
 
-                await Clients.Group(gameRoom.Name).SendAsync("UpdatedSuperAttacksConfig", gameRoom.SuperAttacksConfig);
+                await _notificationService.NotifyGroup(
+                    Clients,
+                    gameRoom.Name,
+                    "UpdatedSuperAttacksConfig",
+                    gameRoom.SuperAttacksConfig);
 
                 Console.WriteLine($"Game state changed to: {gameRoom.State}");
-                await Clients.Group(gameRoom.Name).SendAsync("GameStateChanged", (int)gameRoom.State);
+                await _notificationService.NotifyGroup(
+                    Clients,
+                    gameRoom.Name,
+                    "GameStateChanged",
+                    (int)gameRoom.State);
 
                 var startTime = DateTime.UtcNow;
-                await Clients.Group(gameRoom.Name).SendAsync("PlayerTurn", gameRoom.GetNextTurnPlayerId(players), startTime, timeForTurn);
+                await _notificationService.NotifyGroup(
+                    Clients,
+                    gameRoom.Name,
+                    "PlayerTurn",
+                    gameRoom.GetNextTurnPlayerId(players),
+                    startTime,
+                    timeForTurn);
             }
         }
 
@@ -208,7 +322,14 @@ namespace BattleShipAPI.Hubs
                 var players = _db.Connections.Values.Where(c => c.GameRoomName == connection.GameRoomName).ToList();
 
                 var startTime = DateTime.UtcNow;
-                await Clients.Group(gameRoom.Name).SendAsync("PlayerTurn", gameRoom.GetNextTurnPlayerId(players), startTime, timeForTurn);
+                
+                await _notificationService.NotifyGroup(
+                    Clients,
+                    gameRoom.Name,
+                    "PlayerTurn",
+                    gameRoom.GetNextTurnPlayerId(players),
+                    startTime,
+                    timeForTurn);
             }
         }
 
@@ -224,25 +345,44 @@ namespace BattleShipAPI.Hubs
 
                 if (cell.OwnerId == connection.PlayerId)
                 {
-                    await Clients.Caller.SendAsync("FailedToAttackCell", "You cannot attack your own territory.");
+                    await _notificationService.NotifyClient(
+                        Clients,
+                        Context.ConnectionId,
+                        "FailedToAttackCell",
+                        "You cannot attack your own territory.");
+                    
                     return;
                 }
 
                 if (cell.State == CellState.DamagedShip || cell.State == CellState.SunkenShip || cell.State == CellState.Missed)
                 {
-                    await Clients.Caller.SendAsync("FailedToAttackCell", "This territory has already been attacked.");
+                    await _notificationService.NotifyClient(
+                        Clients,
+                        Context.ConnectionId,
+                        "FailedToAttackCell",
+                        "This territory has already been attacked.");
+
                     return;
                 }
                 
                 if (!connection.TryUseSuperAttack(attackType, gameRoom.SuperAttacksConfig))
                 {
-                    await Clients.Caller.SendAsync("FailedToAttackCell", "Invalid attack type.");
+                    await _notificationService.NotifyClient(
+                        Clients,
+                        Context.ConnectionId,
+                        "FailedToAttackCell",
+                        "You cannot use this super attack.");
+
                     return;
                 }
                 
                 _db.Connections[Context.ConnectionId] = connection;
 
-                await Clients.Caller.SendAsync("UpdatedSuperAttacksConfig", connection.GetAllowedSuperAttacksConfig(gameRoom.SuperAttacksConfig));
+                await _notificationService.NotifyClient(
+                    Clients,
+                    Context.ConnectionId,
+                    "UpdatedSuperAttacksConfig",
+                    connection.GetAllowedSuperAttacksConfig(gameRoom.SuperAttacksConfig));
 
                 var strategy = GameHelper.GetAttackStrategy(attackType);
                 var context = new AttackContext(strategy);
@@ -253,12 +393,23 @@ namespace BattleShipAPI.Hubs
                     await AttackCellByOne(xCell, yCell, players, gameRoom, connection);
                 }
                 
-                await Clients.Group(gameRoom.Name).SendAsync("BoardUpdated", gameRoom.Name, gameRoom.Board);
+                await _notificationService.NotifyGroup(
+                    Clients,
+                    gameRoom.Name,
+                    "BoardUpdated",
+                    gameRoom.Name,
+                    gameRoom.Board);
 
                 if (gameRoom.State != GameState.Finished)
                 {
                     var startTime = DateTime.UtcNow;
-                    await Clients.Group(gameRoom.Name).SendAsync("PlayerTurn", gameRoom.GetNextTurnPlayerId(players), startTime, timeForTurn);
+                    await _notificationService.NotifyGroup(
+                        Clients,
+                        gameRoom.Name,
+                        "PlayerTurn",
+                        gameRoom.GetNextTurnPlayerId(players),
+                        startTime,
+                        timeForTurn);
                 }
 
                 _db.GameRooms[gameRoom.Name] = gameRoom;
@@ -275,18 +426,31 @@ namespace BattleShipAPI.Hubs
 
                 if (!gameRoom.TryFullySinkShip(x, y, cellOwner))
                 {
-                    await Clients.Group(gameRoom.Name).SendAsync("AttackResult", $"{connection.Username} hit the ship!");
+                    await _notificationService.NotifyGroup(
+                        Clients,
+                        gameRoom.Name,
+                        "AttackResult",
+                        $"{connection.Username} hit the ship!");
                 }
                 else
                 {
-                    await Clients.Group(gameRoom.Name).SendAsync("AttackResult", $"{connection.Username} sunk the ship!");
+                    await _notificationService.NotifyGroup(
+                        Clients,
+                        gameRoom.Name,
+                        "AttackResult",
+                        $"{connection.Username} sunk the ship!");
 
                     if (!gameRoom.HasAliveShips(cellOwner))
                     {
                         cellOwner.CanPlay = false;
                         _db.Connections[cellOwner.PlayerId] = cellOwner;
 
-                        await Clients.Group(gameRoom.Name).SendAsync("GameLostResult", $"{cellOwner.Username}", "lost the game!");
+                        await _notificationService.NotifyGroup(
+                            Clients,
+                            gameRoom.Name,
+                            "GameLostResult",
+                            $"{cellOwner.Username}",
+                            "lost the game!");
                     }
 
                     if (players
@@ -294,15 +458,31 @@ namespace BattleShipAPI.Hubs
                         .All(p => !p.CanPlay))
                     {
                         gameRoom.State = GameState.Finished;
-                        await Clients.Group(gameRoom.Name).SendAsync("WinnerResult", $"{connection.Username}", "won the game!");
-                        await Clients.Group(gameRoom.Name).SendAsync("GameStateChanged", (int)gameRoom.State);
+                        
+                        await _notificationService.NotifyGroup(
+                            Clients,
+                            gameRoom.Name,
+                            "WinnerResult",
+                            $"{connection.Username}",
+                            "won the game!");
+                        
+                        await _notificationService.NotifyGroup(
+                            Clients,
+                            gameRoom.Name,
+                            "GameStateChanged",
+                            (int)gameRoom.State);
                     }
                 }
             }
             else
             {
                 cell.State = CellState.Missed;
-                await Clients.Group(gameRoom.Name).SendAsync("AttackResult", $"{connection.Username} missed!");
+                
+                await _notificationService.NotifyGroup(
+                    Clients,
+                    gameRoom.Name,
+                    "AttackResult",
+                    $"{connection.Username} missed!");
             }
         }
 
@@ -310,6 +490,8 @@ namespace BattleShipAPI.Hubs
         {
             if (_db.Connections.TryGetValue(Context.ConnectionId, out var connection))
             {
+                _notificationService.Unsubscribe(Context.ConnectionId);
+                
                 // check if last connection or all others HasDisconnected (clean up everything)
                 var players = _db.Connections.Values
                     .Where(c => c.GameRoomName == connection.GameRoomName)
@@ -340,8 +522,11 @@ namespace BattleShipAPI.Hubs
                     _db.Connections[newModerator.PlayerId] = newModerator;
                     _db.Connections[connection.PlayerId].IsModerator = false;
 
-                    await Clients.Caller.SendAsync("SetModerator", connection.IsModerator);
-                    await Clients.Client(newModerator.PlayerId).SendAsync("SetModerator", _db.Connections[newModerator.PlayerId].IsModerator);
+                    await _notificationService.NotifyClient(
+                        Clients,
+                        newModerator.PlayerId,
+                        "SetModerator",
+                        _db.Connections[newModerator.PlayerId].IsModerator);
                 }
 
                 if (_db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom))

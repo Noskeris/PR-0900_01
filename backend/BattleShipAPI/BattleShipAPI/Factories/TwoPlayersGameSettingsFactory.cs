@@ -1,4 +1,3 @@
-using BattleShipAPI.Enums;
 using BattleShipAPI.GameItems.Boards;
 using BattleShipAPI.GameItems.Ships;
 using BattleShipAPI.GameItems.SuperAttacks;
