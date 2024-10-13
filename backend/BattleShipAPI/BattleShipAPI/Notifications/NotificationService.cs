@@ -31,7 +31,7 @@ public class NotificationService : INotificationService
             .Where(x => x.Key.GroupName == groupName);
 
         var tasks = listeners.Select(listener =>
-            clients.Clients(listener.Key.ClientId).SendAsync(key, values)
+            clients.Clients(listener.Key.ClientId).SendCoreAsync(key, values)
         );
 
         await Task.WhenAll(tasks);
@@ -40,6 +40,6 @@ public class NotificationService : INotificationService
     
     public async Task NotifyClient(IHubCallerClients clients, string clientId, string key, params object?[] values)
     {
-        await clients.Client(clientId).SendAsync(key, values);
+        await clients.Client(clientId).SendCoreAsync(key, values);
     }
 }

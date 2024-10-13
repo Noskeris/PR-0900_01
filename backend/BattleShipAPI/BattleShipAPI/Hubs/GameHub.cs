@@ -124,6 +124,7 @@ namespace BattleShipAPI.Hubs
                 if (players.Count == 0)
                     return;
 
+                //1. DESIGN PATTERN: Abstract Factory
                 var gameRoomSettings = GameRoomSettingsCreator
                     .GetGameFactory(players)
                     .BuildGameRoomSettings();
@@ -384,6 +385,7 @@ namespace BattleShipAPI.Hubs
                     "UpdatedSuperAttacksConfig",
                     connection.GetAllowedSuperAttacksConfig(gameRoom.SuperAttacksConfig));
 
+                //1. DESIGN PATTERN: Strategy
                 var strategy = GameHelper.GetAttackStrategy(attackType);
                 var context = new AttackContext(strategy);
                 var attackCells = context.ExecuteAttack(x, y, gameRoom, connection);
@@ -535,19 +537,22 @@ namespace BattleShipAPI.Hubs
                     {
                         case GameState.NotStarted:
                             _db.Connections.Remove(Context.ConnectionId, out _);
-                            await Clients
-                                .Group(connection.GameRoomName)
-                                .SendAsync("PlayerDisconnected",
-                                    $"Player {connection.Username} has disconnected.");
+                            await _notificationService.NotifyGroup(
+                                Clients,
+                                connection.GameRoomName,
+                                "PlayerDisconnected",
+                                $"Player {connection.Username} has disconnected.");
+
                             break;
 
                         case GameState.PlacingShips:
                             connection.HasDisconnected = true;
                             _db.Connections[Context.ConnectionId] = connection;
-                            await Clients
-                                .Group(connection.GameRoomName)
-                                .SendAsync("PlayerDisconnected",
-                                    $"Player {connection.Username} has disconnected. Game need to be restarted");
+                            await _notificationService.NotifyGroup(
+                                Clients,
+                                connection.GameRoomName,
+                                "PlayerDisconnected",
+                                $"Player {connection.Username} has disconnected. Game need to be restarted");
 
                             var moderator = _db.Connections.Values
                                 .First(x => x.GameRoomName == gameRoom.Name && x.IsModerator);
@@ -558,17 +563,32 @@ namespace BattleShipAPI.Hubs
                             connection.HasDisconnected = true;
                             connection.CanPlay = false;
                             gameRoom.SinkAllShips(connection);
-                            await Clients.Group(gameRoom.Name).SendAsync("BoardUpdated", gameRoom.Name, gameRoom.Board);
+
+                            await _notificationService.NotifyGroup(
+                                Clients,
+                                gameRoom.Name,
+                                "BoardUpdated", 
+                                gameRoom.Name, 
+                                gameRoom.Board);
+
                             if (gameRoom.TurnPlayerId == connection.PlayerId)
                             {
                                 var startTime = DateTime.UtcNow;
-                                await Clients.Group(gameRoom.Name).SendAsync("PlayerTurn", gameRoom.GetNextTurnPlayerId(players), startTime, timeForTurn);
+                                await _notificationService.NotifyGroup(
+                                    Clients,
+                                    gameRoom.Name,
+                                    "PlayerTurn", 
+                                    gameRoom.GetNextTurnPlayerId(players), 
+                                    startTime, 
+                                    timeForTurn);
                             }
+
                             _db.Connections[Context.ConnectionId] = connection;
-                            await Clients
-                                .Group(connection.GameRoomName)
-                                .SendAsync("PlayerDisconnected",
-                                    $"Player {connection.Username} has disconnected.");
+                            await _notificationService.NotifyGroup(
+                                Clients,
+                                connection.GameRoomName,
+                                "PlayerDisconnected",
+                                $"Player {connection.Username} has disconnected.");
 
                             players = _db.Connections.Values.Where(c => c.GameRoomName == connection.GameRoomName).ToList();
 
@@ -577,18 +597,30 @@ namespace BattleShipAPI.Hubs
                                 .All(p => !p.CanPlay))
                             {
                                 gameRoom.State = GameState.Finished;
-                                await Clients.Group(gameRoom.Name).SendAsync("AttackResult", $"{connection.Username} won the game!");
-                                await Clients.Group(gameRoom.Name).SendAsync("GameStateChanged", (int)gameRoom.State);
+                                await _notificationService.NotifyGroup(
+                                    Clients,
+                                    gameRoom.Name,
+                                    "AttackResult",
+                                    $"{connection.Username} won the game!");
+
+                                await _notificationService.NotifyGroup(
+                                    Clients,
+                                    gameRoom.Name,
+                                    "GameStateChanged",
+                                    (int)gameRoom.State);
                             }
                             break;
 
                         case GameState.Finished:
                             connection.HasDisconnected = true;
                             _db.Connections[Context.ConnectionId] = connection;
-                            await Clients
-                                .Group(connection.GameRoomName)
-                                .SendAsync("PlayerDisconnected",
-                                    $"Player {connection.Username} has disconnected.");
+
+                            await _notificationService.NotifyGroup(
+                                Clients,
+                                connection.GameRoomName,
+                                "PlayerDisconnected",
+                                $"Player {connection.Username} has disconnected.");
+
                             break;
 
                         default:
@@ -634,18 +666,30 @@ namespace BattleShipAPI.Hubs
                         _db.Connections[x.PlayerId].UsedSuperAttacks.Clear();
                     });
 
-                await Clients.Group(gameRoom.Name).SendAsync("GameStateChanged", (int)gameRoom.State);
+                await _notificationService.NotifyGroup(
+                    Clients, 
+                    gameRoom.Name, 
+                    "GameStateChanged", 
+                    (int)gameRoom.State);
 
-                await Clients.Client(connection.PlayerId).SendAsync("AvailableShipsForConfiguration", new List<Ship>()
-                {
-                    new() { ShipType = ShipType.Carrier, Size = 5 },
-                    new() { ShipType = ShipType.Battleship, Size = 4 },
-                    new() { ShipType = ShipType.Cruiser, Size = 3 },
-                    new() { ShipType = ShipType.Submarine, Size = 2 },
-                    new() { ShipType = ShipType.Destroyer, Size = 1 }
-                });
+                await _notificationService.NotifyClient(
+                    Clients,
+                    connection.PlayerId,
+                    "AvailableShipsForConfiguration",
+                    new List<Ship>()
+                    {
+                        new() { ShipType = ShipType.Carrier, Size = 5 },
+                        new() { ShipType = ShipType.Battleship, Size = 4 },
+                        new() { ShipType = ShipType.Cruiser, Size = 3 },
+                        new() { ShipType = ShipType.Submarine, Size = 2 },
+                        new() { ShipType = ShipType.Destroyer, Size = 1 }
+                    });
 
-                await Clients.Client(connection.PlayerId).SendAsync("CurrentGameConfiguration", gameRoom.ShipsConfig);
+                await _notificationService.NotifyClient(
+                    Clients,
+                    connection.PlayerId,
+                    "CurrentGameConfiguration", 
+                    gameRoom.ShipsConfig);
             }
         }
     }
