@@ -1,3 +1,4 @@
+using BattleShipAPI.Builders;
 using BattleShipAPI.GameItems.Boards;
 using BattleShipAPI.GameItems.Ships;
 using BattleShipAPI.GameItems.SuperAttacks;
@@ -14,8 +15,12 @@ public class FourPlayersGameSettingsFactory : AbstractGameSettingsFactory
     public FourPlayersGameSettingsFactory(List<UserConnection> players)
     {
         Board = new FourPlayersBoard(players);
-        ShipsConfig = new FourPlayersShips();
-        SuperAttacksConfig = new FourPlayersSuperAttacks();
+        
+        var shipsBuilder = new ShipsBuilder();
+        ShipsConfig = new FourPlayersShips(shipsBuilder);
+
+        var superAttacksBuilder = new SuperAttacksBuilder();
+        SuperAttacksConfig = new FourPlayersSuperAttacks(superAttacksBuilder);
     }
 
     public override GameRoomSettings BuildGameRoomSettings()

@@ -1,3 +1,4 @@
+using BattleShipAPI.Builders;
 using BattleShipAPI.Enums;
 using BattleShipAPI.Models;
 
@@ -7,13 +8,12 @@ public class FourPlayersSuperAttacks : SuperAttacks
 {
     public override List<SuperAttackConfig> SuperAttacksConfig { get; }
     
-    public FourPlayersSuperAttacks()
+    public FourPlayersSuperAttacks(IConfigBuilder<SuperAttackConfig> builder)
     {
-        SuperAttacksConfig = new List<SuperAttackConfig>()
-        {
-            new SuperAttackConfig() { AttackType = AttackType.Plus, Count = 3 },
-            new SuperAttackConfig() { AttackType = AttackType.Cross, Count = 3 },
-            new SuperAttackConfig() { AttackType = AttackType.Boom, Count = 3 }
-        };
+        SuperAttacksConfig = builder
+            .AddConfig(new SuperAttackConfig { AttackType = AttackType.Plus, Count = 3 })
+            .AddConfig(new SuperAttackConfig { AttackType = AttackType.Cross, Count = 3 })
+            .AddConfig(new SuperAttackConfig { AttackType = AttackType.Boom, Count = 3 })
+            .Build();
     }
 }

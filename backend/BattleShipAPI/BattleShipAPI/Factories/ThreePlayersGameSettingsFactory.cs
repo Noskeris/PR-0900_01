@@ -1,3 +1,4 @@
+using BattleShipAPI.Builders;
 using BattleShipAPI.GameItems.Boards;
 using BattleShipAPI.GameItems.Ships;
 using BattleShipAPI.GameItems.SuperAttacks;
@@ -14,8 +15,12 @@ public class ThreePlayersGameSettingsFactory : AbstractGameSettingsFactory
     public ThreePlayersGameSettingsFactory(List<UserConnection> players)
     {
         Board = new ThreePlayersBoard(players);
-        ShipsConfig = new ThreePlayersShips();
-        SuperAttacksConfig = new ThreePlayersSuperAttacks();
+        
+        var shipsBuilder = new ShipsBuilder();
+        ShipsConfig = new ThreePlayersShips(shipsBuilder);
+
+        var superAttacksBuilder = new SuperAttacksBuilder();
+        SuperAttacksConfig = new ThreePlayersSuperAttacks(superAttacksBuilder);
     }
 
     public override GameRoomSettings BuildGameRoomSettings()

@@ -1,3 +1,4 @@
+using BattleShipAPI.Builders;
 using BattleShipAPI.Enums;
 using BattleShipAPI.Models;
 
@@ -7,13 +8,12 @@ public class TwoPlayersShips : Ships
 {
     public override List<ShipConfig> ShipsConfig { get; }
     
-    public TwoPlayersShips()
+    public TwoPlayersShips(IConfigBuilder<ShipConfig> builder)
     {
-        ShipsConfig = new List<ShipConfig>()
-        {
-            new ShipConfig() { ShipType = ShipType.Submarine, Count = 1 },
-            new ShipConfig() { ShipType = ShipType.Carrier, Count = 1 },
-            new ShipConfig() { ShipType = ShipType.Cruiser, Count = 1 }
-        };
+        ShipsConfig = builder
+            .AddConfig(new ShipConfig { ShipType = ShipType.Submarine, Count = 1 })
+            .AddConfig(new ShipConfig { ShipType = ShipType.Carrier, Count = 1 })
+            .AddConfig(new ShipConfig { ShipType = ShipType.Cruiser, Count = 1 })
+            .Build();
     }
 }
