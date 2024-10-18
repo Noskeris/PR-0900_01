@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace BattleShipAPI.Notifications;
 
-//4. DESIGN PATTERN: Observer
+// 5. DESIGN PATTERN: Observer
 public class NotificationService : INotificationService
 {
     private readonly InMemoryDB _db;

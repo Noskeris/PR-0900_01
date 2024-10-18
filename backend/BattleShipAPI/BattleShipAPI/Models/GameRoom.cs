@@ -21,16 +21,12 @@ namespace BattleShipAPI.Models
         public List<SuperAttackConfig> SuperAttacksConfig { get; private set; }
 
         public string TurnPlayerId { get; private set; } = string.Empty;
-
-        private bool AreSettingsSet = false;
         
         public void SetSettings(GameRoomSettings settings)
         {
             Board = settings.Board;
             ShipsConfig = settings.Ships.ShipsConfig;
             SuperAttacksConfig = settings.SuperAttacks.SuperAttacksConfig;
-            
-            AreSettingsSet = true;
         }
 
         public string GetNextTurnPlayerId(List<UserConnection> players)

@@ -4,7 +4,26 @@ namespace BattleShipAPI.Factories;
 
 public static class GameRoomSettingsCreator
 {
-    public static AbstractGameSettingsFactory GetGameFactory(List<UserConnection> players)
+    public static Dictionary<int, GameRoomSettings> GameSettingsTemplates = new Dictionary<int, GameRoomSettings>();
+
+    public static GameRoomSettings GetGameRoomSettings(List<UserConnection> players)
+    {
+        if (!GameSettingsTemplates.TryGetValue(players.Count, out var template))
+        {
+            // 4. DESIGN PATTERN: Abstract Factory
+            template = GetGameFactory(players).BuildGameRoomSettings();
+            GameSettingsTemplates[players.Count] = template;
+        }
+        
+        // 7. DESIGN PATTERN: Prototype
+        var gameRoomSettings = template.Clone();
+        
+        gameRoomSettings.Board.AssignBoardSections(players);
+        
+        return gameRoomSettings;
+    }
+    
+    private static AbstractGameSettingsFactory GetGameFactory(List<UserConnection> players)
     {
         return players.Count switch
         {

@@ -6,6 +6,7 @@ using BattleShipAPI.Models;
 
 namespace BattleShipAPI.Factories;
 
+// 2. DESIGN PATTERN: Factory
 public class TwoPlayersGameSettingsFactory : AbstractGameSettingsFactory
 {
     public override Board Board { get; }
@@ -14,7 +15,7 @@ public class TwoPlayersGameSettingsFactory : AbstractGameSettingsFactory
 
     public TwoPlayersGameSettingsFactory(List<UserConnection> players)
     {
-        Board = new TwoPlayersBoard(players);
+        Board = new TwoPlayersBoard();
 
         var shipsBuilder = new ShipsBuilder();
         ShipsConfig = new TwoPlayersShips(shipsBuilder);

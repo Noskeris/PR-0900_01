@@ -10,6 +10,7 @@ public class TwoPlayersShips : Ships
     
     public TwoPlayersShips(IConfigBuilder<ShipConfig> builder)
     {
+        // 6. DESIGN PATTERN: Builder
         ShipsConfig = builder
             .AddConfig(new ShipConfig { ShipType = ShipType.Submarine, Count = 1 })
             .AddConfig(new ShipConfig { ShipType = ShipType.Carrier, Count = 1 })

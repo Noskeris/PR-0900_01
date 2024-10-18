@@ -4,12 +4,14 @@ namespace BattleShipAPI.GameItems.Boards;
 
 public class TwoPlayersBoard : Board
 {
-    public TwoPlayersBoard(List<UserConnection> players) : base(20, 10)
-    {
-        var player1Of2 = players[0];
-        var player2Of2 = players[1];
+    protected override List<Section> BoardSections { get; }
 
-        AssignBoardSection(0, 0, 9, 9, player1Of2.PlayerId);
-        AssignBoardSection(10, 0, 19, 9, player2Of2.PlayerId);
+    public TwoPlayersBoard() : base(20, 10)
+    {
+        BoardSections =
+        [
+            new Section(0, 0, 9, 9),
+            new Section(10, 0, 19, 9)
+        ];
     }
 }

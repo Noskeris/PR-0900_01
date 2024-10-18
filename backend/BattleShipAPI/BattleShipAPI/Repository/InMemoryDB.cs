@@ -2,7 +2,7 @@
 using System.Collections.Concurrent;
 using BattleShipAPI.Notifications;
 
-//1. DESIGN PATTERN: Singleton
+// 1. DESIGN PATTERN: Singleton
 namespace BattleShipAPI.Repository
 {
     public class  InMemoryDB

@@ -14,7 +14,7 @@ public class FourPlayersGameSettingsFactory : AbstractGameSettingsFactory
 
     public FourPlayersGameSettingsFactory(List<UserConnection> players)
     {
-        Board = new FourPlayersBoard(players);
+        Board = new FourPlayersBoard();
         
         var shipsBuilder = new ShipsBuilder();
         ShipsConfig = new FourPlayersShips(shipsBuilder);

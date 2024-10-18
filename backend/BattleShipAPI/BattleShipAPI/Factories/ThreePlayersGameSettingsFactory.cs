@@ -14,7 +14,7 @@ public class ThreePlayersGameSettingsFactory : AbstractGameSettingsFactory
 
     public ThreePlayersGameSettingsFactory(List<UserConnection> players)
     {
-        Board = new ThreePlayersBoard(players);
+        Board = new ThreePlayersBoard();
         
         var shipsBuilder = new ShipsBuilder();
         ShipsConfig = new ThreePlayersShips(shipsBuilder);

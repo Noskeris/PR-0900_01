@@ -17,7 +17,6 @@ namespace BattleShipAPI.Hubs
 
         public GameHub(INotificationService notificationService)
         {
-            //1. DESIGN PATTERN: Singleton
             _db = InMemoryDB.Instance;
             _notificationService = notificationService;
         }
@@ -123,18 +122,13 @@ namespace BattleShipAPI.Hubs
 
                 if (players.Count == 0)
                     return;
-
-                //1. DESIGN PATTERN: Abstract Factory
-                var gameRoomSettings = GameRoomSettingsCreator
-                    .GetGameFactory(players)
-                    .BuildGameRoomSettings();
+                
+                var gameRoomSettings = GameRoomSettingsCreator.GetGameRoomSettings(players);
                 
                 gameRoom.SetSettings(gameRoomSettings);
 
                 gameRoom.State = GameState.PlacingShips;
                 _db.GameRooms[gameRoom.Name] = gameRoom;
-
-                Console.WriteLine($"Game state changed to: {gameRoom.State}");
                 
                 await _notificationService.NotifyGroup(
                     Clients,
@@ -294,7 +288,6 @@ namespace BattleShipAPI.Hubs
                     "UpdatedSuperAttacksConfig",
                     gameRoom.SuperAttacksConfig);
 
-                Console.WriteLine($"Game state changed to: {gameRoom.State}");
                 await _notificationService.NotifyGroup(
                     Clients,
                     gameRoom.Name,
@@ -385,7 +378,7 @@ namespace BattleShipAPI.Hubs
                     "UpdatedSuperAttacksConfig",
                     connection.GetAllowedSuperAttacksConfig(gameRoom.SuperAttacksConfig));
 
-                //1. DESIGN PATTERN: Strategy
+                // 4. DESIGN PATTERN: Strategy
                 var strategy = GameHelper.GetAttackStrategy(attackType);
                 var context = new AttackContext(strategy);
                 var attackCells = context.ExecuteAttack(x, y, gameRoom, connection);

@@ -1,10 +1,11 @@
 using BattleShipAPI.GameItems.Boards;
 using BattleShipAPI.GameItems.Ships;
 using BattleShipAPI.GameItems.SuperAttacks;
+using BattleShipAPI.Prototype;
 
 namespace BattleShipAPI.Models;
 
-public class GameRoomSettings
+public class GameRoomSettings : IPrototype<GameRoomSettings>
 {
     public Ships Ships { get; }
     
@@ -17,5 +18,10 @@ public class GameRoomSettings
         Ships = ships;
         SuperAttacks = superAttacks;
         Board = board;
+    }
+    
+    public GameRoomSettings Clone()
+    {
+        return new GameRoomSettings(Ships.Clone(), SuperAttacks.Clone(), Board.Clone());
     }
 }
