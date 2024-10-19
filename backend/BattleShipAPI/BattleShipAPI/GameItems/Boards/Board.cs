@@ -12,7 +12,7 @@ namespace BattleShipAPI.GameItems.Boards
         
         public Cell[][] Cells { get; set; }
         
-        protected abstract List<Section> BoardSections { get; }
+        protected abstract IReadOnlyList<Section> BoardSections { get; }
 
         public Board(int xLength, int yLength)
         {
