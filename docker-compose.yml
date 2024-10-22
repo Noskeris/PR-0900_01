@@ -1,0 +1,23 @@
+﻿services:
+  backend:
+    image: battleshipapi
+    build:
+      context: ./backend/BattleShipAPI
+      dockerfile: BattleShipAPI/Dockerfile
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ./frontend/battleship
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
