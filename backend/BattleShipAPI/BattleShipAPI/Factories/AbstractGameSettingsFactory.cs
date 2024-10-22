@@ -11,7 +11,7 @@ public abstract class AbstractGameSettingsFactory
     
     public abstract SuperAttacks SuperAttacksConfig { get; }
     
-    public abstract Ships ShipsConfig { get; }
+    //public abstract Ships ShipsConfig { get; }
     
-    public abstract GameRoomSettings BuildGameRoomSettings();
+    public abstract GameRoomSettings BuildGameRoomSettings(Ships shipConfig, int timerDuration);
 }

@@ -14,6 +14,8 @@ namespace BattleShipAPI.Models
 
         public GameState State { get; set; } = GameState.NotStarted;
 
+        public GameMode Mode { get; set; } = GameMode.Normal;
+
         public Board Board { get; private set; }
         
         public List<ShipConfig> ShipsConfig { get; private set; }

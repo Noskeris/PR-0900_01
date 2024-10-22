@@ -13,7 +13,7 @@ namespace BattleShipAPI.Hubs
     {
         private readonly InMemoryDB _db;
         private readonly INotificationService _notificationService;
-        private readonly int timeForTurn = 30;
+        private int timeForTurn;
 
         public GameHub(INotificationService notificationService)
         {
@@ -72,19 +72,6 @@ namespace BattleShipAPI.Hubs
             {
                 connection.IsModerator = true;
                 _db.GameRooms[connection.GameRoomName] = new GameRoom() { Name = connection.GameRoomName };
-                
-                await _notificationService.NotifyClient(
-                    Clients,
-                    Context.ConnectionId,
-                    "AvailableShipsForConfiguration",
-                    new List<Ship>()
-                    {
-                        new() { ShipType = ShipType.Carrier, Size = 5 },
-                        new() { ShipType = ShipType.Battleship, Size = 4 },
-                        new() { ShipType = ShipType.Cruiser, Size = 3 },
-                        new() { ShipType = ShipType.Submarine, Size = 2 },
-                        new() { ShipType = ShipType.Destroyer, Size = 1 }
-                    });
             }
 
             _db.Connections[Context.ConnectionId] = connection;
@@ -109,23 +96,45 @@ namespace BattleShipAPI.Hubs
                 $"{connection.Username} has joined the game room {connection.GameRoomName}");
         }
 
-        public async Task GenerateBoard()
+        public async Task ConfirmGameMode(GameMode gameMode)
         {
             if (_db.Connections.TryGetValue(Context.ConnectionId, out var connection)
                 && _db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom)
-                && gameRoom.State == GameState.NotStarted
+                && gameRoom.State == GameState.NotStarted)
+            {
+                var players = _db.Connections.Values
+                    .Where(c => c.GameRoomName == connection.GameRoomName)
+                    .ToList();
+
+                //TODO THINK IF < 2 PLAYERS SHOULD BE ALLOWED
+                if (players.Count < 2)
+                    return;
+
+                gameRoom.Mode = gameMode;
+                gameRoom.State = GameState.GameModeConfirmed;
+            }
+        }
+
+        public async Task GenerateBoard(string mode)
+        {
+            if (_db.Connections.TryGetValue(Context.ConnectionId, out var connection)
+                && _db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom)
+                && gameRoom.State == GameState.GameModeConfirmed
                 && connection.IsModerator)
             {
                 var players = _db.Connections.Values
                     .Where(c => c.GameRoomName == connection.GameRoomName)
                     .ToList();
 
+                //TODO THINK IF < 2 PLAYERS SHOULD BE ALLOWED
                 if (players.Count == 0)
                     return;
-                
-                var gameRoomSettings = GameRoomSettingsCreator.GetGameRoomSettings(players);
-                
+
+                var gameRoomSettings = GameRoomSettingsCreator.GetGameRoomSettings(players, mode);
                 gameRoom.SetSettings(gameRoomSettings);
+
+                //TODO THINK ABOUT HOW TO IMPROOVE THIS
+                timeForTurn = gameRoomSettings.TimerDuration;
 
                 gameRoom.State = GameState.PlacingShips;
                 _db.GameRooms[gameRoom.Name] = gameRoom;
@@ -538,6 +547,7 @@ namespace BattleShipAPI.Hubs
 
                             break;
 
+                        case GameState.GameModeConfirmed:
                         case GameState.PlacingShips:
                             connection.HasDisconnected = true;
                             _db.Connections[Context.ConnectionId] = connection;
@@ -572,7 +582,7 @@ namespace BattleShipAPI.Hubs
                                     gameRoom.Name,
                                     "PlayerTurn", 
                                     gameRoom.GetNextTurnPlayerId(players), 
-                                    startTime, 
+                                    startTime,
                                     timeForTurn);
                             }
 
@@ -664,19 +674,6 @@ namespace BattleShipAPI.Hubs
                     gameRoom.Name, 
                     "GameStateChanged", 
                     (int)gameRoom.State);
-
-                await _notificationService.NotifyClient(
-                    Clients,
-                    connection.PlayerId,
-                    "AvailableShipsForConfiguration",
-                    new List<Ship>()
-                    {
-                        new() { ShipType = ShipType.Carrier, Size = 5 },
-                        new() { ShipType = ShipType.Battleship, Size = 4 },
-                        new() { ShipType = ShipType.Cruiser, Size = 3 },
-                        new() { ShipType = ShipType.Submarine, Size = 2 },
-                        new() { ShipType = ShipType.Destroyer, Size = 1 }
-                    });
 
                 await _notificationService.NotifyClient(
                     Clients,

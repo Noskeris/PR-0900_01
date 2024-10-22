@@ -10,22 +10,22 @@ public class FourPlayersGameSettingsFactory : AbstractGameSettingsFactory
 {
     public override Board Board { get; }
     public override SuperAttacks SuperAttacksConfig { get; }
-    public override Ships ShipsConfig { get; }
+    //public override Ships ShipsConfig { get; }
 
     public FourPlayersGameSettingsFactory(List<UserConnection> players)
     {
         Board = new FourPlayersBoard();
         
-        var shipsBuilder = new ShipsBuilder();
-        ShipsConfig = new FourPlayersShips(shipsBuilder);
+        //var shipsBuilder = new ShipsBuilder();
+        //ShipsConfig = new FourPlayersShips(shipsBuilder);
 
         var superAttacksBuilder = new SuperAttacksBuilder();
         SuperAttacksConfig = new FourPlayersSuperAttacks(superAttacksBuilder);
     }
 
-    public override GameRoomSettings BuildGameRoomSettings()
+    public override GameRoomSettings BuildGameRoomSettings(Ships shipConfig, int t)
     {
 
-        return new GameRoomSettings(ShipsConfig, SuperAttacksConfig, Board);
+        return new GameRoomSettings(shipConfig, SuperAttacksConfig, Board, t);
     }
 }

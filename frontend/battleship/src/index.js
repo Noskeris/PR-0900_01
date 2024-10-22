@@ -123,10 +123,6 @@ export const App = () => {
         setSuperAttacks(mappedSuperAttacks);
       });
 
-      newConnection.on("AvailableShipsForConfiguration", (shipConfig) => {
-        //TODO LATER
-      })
-
       newConnection.on("UpdatedShipsConfig", (shipsConfig) => {
         const mappedShips = shipsConfig
           .map((ship) => {

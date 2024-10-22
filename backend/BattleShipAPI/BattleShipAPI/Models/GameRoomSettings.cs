@@ -12,16 +12,19 @@ public class GameRoomSettings : IPrototype<GameRoomSettings>
     public SuperAttacks SuperAttacks { get; }
     
     public Board Board { get; }
+
+    public int TimerDuration { get; }
     
-    public GameRoomSettings(Ships ships, SuperAttacks superAttacks, Board board)
+    public GameRoomSettings(Ships ships, SuperAttacks superAttacks, Board board, int timerDuration)
     {
         Ships = ships;
         SuperAttacks = superAttacks;
         Board = board;
+        TimerDuration = timerDuration;
     }
     
     public GameRoomSettings Clone()
     {
-        return new GameRoomSettings(Ships.Clone(), SuperAttacks.Clone(), Board.Clone());
+        return new GameRoomSettings(Ships.Clone(), SuperAttacks.Clone(), Board.Clone(), TimerDuration);
     }
 }

@@ -1,21 +1,28 @@
+using BattleShipAPI.Factories.LevelsFactory;
 using BattleShipAPI.Models;
 
 namespace BattleShipAPI.Factories;
 
 public static class GameRoomSettingsCreator
 {
-    public static Dictionary<int, GameRoomSettings> GameSettingsTemplates = new Dictionary<int, GameRoomSettings>();
+    public static Dictionary<(string, int), GameRoomSettings> GameSettingsTemplates = new Dictionary<(string, int), GameRoomSettings>();
 
-    public static GameRoomSettings GetGameRoomSettings(List<UserConnection> players)
+    public static GameRoomSettings GetGameRoomSettings(List<UserConnection> players, string mode)
     {
-        if (!GameSettingsTemplates.TryGetValue(players.Count, out var template))
+        if (!GameSettingsTemplates.TryGetValue((mode, players.Count), out var template))
         {
             // 4. DESIGN PATTERN: Abstract Factory
-            template = GetGameFactory(players).BuildGameRoomSettings();
-            GameSettingsTemplates[players.Count] = template;
+
+            //TODO FIX with supperattacks and using factories better
+            var abstractFactory = GetLevelFactory(mode);
+            var shipSettings = abstractFactory.CreateShipsConfig();
+            var timer = abstractFactory.GetTimerDuration();
+            var settings = GetGameFactory(players).BuildGameRoomSettings(shipSettings, timer);
+
+            template = settings;
+            GameSettingsTemplates[(mode, players.Count)] = template;
         }
         
-        // 7. DESIGN PATTERN: Prototype
         var gameRoomSettings = template.Clone();
         
         gameRoomSettings.Board.AssignBoardSections(players);
@@ -31,6 +38,17 @@ public static class GameRoomSettingsCreator
             3 => new ThreePlayersGameSettingsFactory(players),
             4 => new FourPlayersGameSettingsFactory(players),
             _ => throw new ArgumentException("Invalid number of players")
+        };
+    }
+
+    private static AbstractLevelFactory GetLevelFactory(string mode)
+    {
+        return mode switch
+        {
+            "normal" => new NormalLevelFactory(),
+            "rapid" => new RapidLevelFactory(),
+            "mobility" => new MobilityLevelFactory(),
+            _ => throw new ArgumentException("Invalid game mode")
         };
     }
 }
