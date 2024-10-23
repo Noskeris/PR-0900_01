@@ -83,6 +83,7 @@ export const App = () => {
         if(turnDuration === -1)
         {
           setTurnEndTime(-1);
+          return;
         }
         setTurnEndTime(new Date(startTime.getTime() + turnDuration * 1000));
       })

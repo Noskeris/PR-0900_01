@@ -7,6 +7,8 @@ using BattleShipAPI.Notifications;
 using BattleShipAPI.Repository;
 using Microsoft.AspNetCore.SignalR;
 
+//TODO add ship shield logic
+//TODO add ship mobility logic
 namespace BattleShipAPI.Hubs
 {
     public class GameHub : Hub
@@ -35,7 +37,7 @@ namespace BattleShipAPI.Hubs
             }
 
             if (_db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom) &&
-                gameRoom.State != GameState.NotStarted)
+                (gameRoom.State != GameState.NotStarted && gameRoom.State != GameState.GameModeConfirmed))
             {
                 await _notificationService.NotifyClient(
                     Clients,
@@ -127,8 +129,7 @@ namespace BattleShipAPI.Hubs
                     .Where(c => c.GameRoomName == connection.GameRoomName)
                     .ToList();
 
-                //TODO THINK IF < 2 PLAYERS SHOULD BE ALLOWED
-                if (players.Count == 0)
+                if (players.Count < 2)
                     return;
 
                 var gameRoomSettings = GameRoomSettingsCreator.GetGameRoomSettings(players, gameMode);

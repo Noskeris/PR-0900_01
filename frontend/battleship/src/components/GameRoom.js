@@ -47,7 +47,6 @@ const GameRoom = ({
   }, [shipsToPlace]);
 
   useEffect(() => {
-    console.log("turnEndTime", turnEndTime)
     if (turnEndTime && turnEndTime !== -1) {
       const interval = setInterval(() => {
         const timeLeft = Math.max(0, (turnEndTime - new Date()) / 1000);
@@ -136,9 +135,12 @@ const GameRoom = ({
                   {playerTurn === playerId ? "Your Turn" : "Opponent's Turn"}
                 </Typography>
                 <Typography variant="h6" align="center" color="error">
-                  {playerTurn === playerId
-                    ? `Time left for turn: ${timer}`
-                    : "Waiting for opponent..."}
+                  {turnEndTime !== -1 ?
+                  playerTurn === playerId
+                  ? `Time left for turn: ${timer}`
+                  : "Waiting for opponent..." 
+                  : ""}
+
                 </Typography>
                 <SuperAttackSelector
                   superAttacks={superAttacks}
