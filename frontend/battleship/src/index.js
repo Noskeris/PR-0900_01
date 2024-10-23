@@ -104,6 +104,11 @@ export const App = () => {
         setMessages((prevMessages) => [...prevMessages, { username, msg }]);
       });
 
+      newConnection.on("PlayerIsReady", (message) => {
+        console.log("PlayerIsReady", message);
+        setIsPlayerReady(true);
+      })
+
       newConnection.on("UpdatedSuperAttacksConfig", (superAttacksConfig) => {
         const mappedSuperAttacks = superAttacksConfig
           .map((superAttack) => {
@@ -239,6 +244,15 @@ export const App = () => {
     }
   }
 
+  const sendCommand = async (command) => {
+    try {
+      await connection.invoke("HandlePlayerCommand", command);
+      console.log("HandlePlayerCommand invoked");
+    } catch (error) {
+      console.log("Error HandlePlayerCommand", error);
+    }
+  }
+
 
   return (
     <>
@@ -269,6 +283,7 @@ export const App = () => {
           superAttacks={superAttacks}
           isPlayerReady={isPlayerReady}
           confirmGameMode={confirmGameMode}
+          sendCommand={sendCommand}
         />
       )}
     </>

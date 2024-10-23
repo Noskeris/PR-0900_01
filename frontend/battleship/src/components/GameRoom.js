@@ -13,6 +13,7 @@ import BoardComponent from "./BoardComponent";
 import { PlayerFleet } from "./PlayerFleet";
 import SuperAttackSelector from "./SuperAttackSelector";
 import GameModeSelector from "./GameModeSelector";
+import CommandInput from "./ComamndInput";
 
 const GameRoom = ({
   messages,
@@ -37,6 +38,7 @@ const GameRoom = ({
   superAttacks,
   isPlayerReady,
   confirmGameMode,
+  sendCommand
 }) => {
   const [currentlyPlacing, setCurrentlyPlacing] = useState(null);
   const [availableShips, setAvailableShips] = useState(shipsToPlace);
@@ -105,6 +107,7 @@ const GameRoom = ({
   };
 
   return (
+    <>
     <Box
       sx={{
         p: 5,
@@ -248,6 +251,10 @@ const GameRoom = ({
         </Grid>
       </Grid>
     </Box>
+    {(gameState !== 3 && gameState !== 4) && (
+      <CommandInput sendCommand={sendCommand} />
+    )}
+    </>
   );
 };
 

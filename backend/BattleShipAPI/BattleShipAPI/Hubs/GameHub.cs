@@ -250,7 +250,7 @@ namespace BattleShipAPI.Hubs
                 await _notificationService.NotifyClient(
                     Clients,
                     Context.ConnectionId,
-                    "PlayerNotReady",
+                    "PlayerIsReady",
                     "You are ready to start the game."); 
             }
         }
@@ -390,7 +390,7 @@ namespace BattleShipAPI.Hubs
                 var context = new AttackContext(strategy);
                 var attackCells = context.ExecuteAttack(x, y, gameRoom, connection);
 
-                foreach (var (xCell, yCell)  in attackCells)
+                foreach (var (xCell, yCell) in attackCells)
                 {
                     await AttackCellByOne(xCell, yCell, players, gameRoom, connection);
                 }
@@ -638,6 +638,96 @@ namespace BattleShipAPI.Hubs
             if (_db.Connections.TryGetValue(Context.ConnectionId, out var connection))
             {
                 await RestartGame(connection);
+            }
+        }
+
+        public async Task HandlePlayerCommand(string command)
+        {
+            if (_db.Connections.TryGetValue(Context.ConnectionId, out var connection)
+                && _db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom)
+                && (gameRoom.State == GameState.NotStarted || gameRoom.State == GameState.GameModeConfirmed 
+                || gameRoom.State == GameState.PlacingShips))
+            {
+                var commandParts = command.Split(' ');
+                var action = commandParts[0].ToLower();
+                switch (action)
+                {
+                    case "ready":
+                        await SetPlayerToReady();
+                        break;
+                    case "start":
+                        await StartGame();
+                        break;
+                    case "gamemode":
+                        if (Enum.TryParse<GameMode>(commandParts[1], true, out var gameMode))
+                        {
+                            await ConfirmGameMode(gameMode);
+                        }
+                        break;
+                    case "generateboard":
+                        await GenerateBoard(gameRoom.Mode);
+                        break;
+                    case "addship":
+                        if (commandParts.Length >= 5 &&
+                            Enum.TryParse<ShipType>(commandParts[1], true, out var shipType) &&
+                            int.TryParse(commandParts[2], out var startX) &&
+                            int.TryParse(commandParts[3], out var startY) &&
+                            Enum.TryParse<ShipOrientation>(commandParts[4], true, out var shipOrientation))
+                        {
+                            int endX = startX;
+                            int endY = startY;
+
+                            var shipConfig = gameRoom.ShipsConfig.FirstOrDefault(config => config.ShipType == shipType);
+
+                            if (shipConfig == null)
+                            {
+                                await _notificationService.NotifyClient(
+                                Clients,
+                                Context.ConnectionId,
+                                "FailedToAddShip",
+                                "No available ships in config.");
+                            }
+
+                            int shipSize = shipConfig!.Size;
+
+                            if (shipOrientation == ShipOrientation.Horizontal)
+                            {
+                                endX = startX + shipSize - 1;
+                            }
+                            else if (shipOrientation == ShipOrientation.Vertical)
+                            {
+                                endY = startY + shipSize - 1;
+                            }
+
+                            var placedShip = new PlacedShip
+                            {
+                                ShipType = shipType,
+                                StartX = startX,
+                                StartY = startY,
+                                EndX = endX,
+                                EndY = endY
+                            };
+
+                            await AddShip(placedShip);
+                        }
+                        else
+                        {
+                            await _notificationService.NotifyClient(
+                                Clients,
+                                Context.ConnectionId,
+                                "FailedToAddShip",
+                                "Invalid command format for adding a ship.");
+                        }
+                        break;
+
+                    default:
+                        await _notificationService.NotifyClient(
+                            Clients,
+                            Context.ConnectionId,
+                            "UnknownCommand",
+                            $"Unknown command: {command}");
+                        break;
+                }
             }
         }
 
