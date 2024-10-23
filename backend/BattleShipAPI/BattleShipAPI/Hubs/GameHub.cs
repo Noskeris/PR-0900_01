@@ -13,7 +13,6 @@ namespace BattleShipAPI.Hubs
     {
         private readonly InMemoryDB _db;
         private readonly INotificationService _notificationService;
-        private int timeForTurn;
 
         public GameHub(INotificationService notificationService)
         {
@@ -106,16 +105,18 @@ namespace BattleShipAPI.Hubs
                     .Where(c => c.GameRoomName == connection.GameRoomName)
                     .ToList();
 
-                //TODO THINK IF < 2 PLAYERS SHOULD BE ALLOWED
-                if (players.Count < 2)
-                    return;
-
                 gameRoom.Mode = gameMode;
                 gameRoom.State = GameState.GameModeConfirmed;
+
+                await _notificationService.NotifyGroup(
+                    Clients,
+                    gameRoom.Name,
+                    "GameStateChanged",
+                    (int)gameRoom.State);
             }
         }
 
-        public async Task GenerateBoard(string mode)
+        public async Task GenerateBoard(GameMode gameMode)
         {
             if (_db.Connections.TryGetValue(Context.ConnectionId, out var connection)
                 && _db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom)
@@ -130,11 +131,8 @@ namespace BattleShipAPI.Hubs
                 if (players.Count == 0)
                     return;
 
-                var gameRoomSettings = GameRoomSettingsCreator.GetGameRoomSettings(players, mode);
+                var gameRoomSettings = GameRoomSettingsCreator.GetGameRoomSettings(players, gameMode);
                 gameRoom.SetSettings(gameRoomSettings);
-
-                //TODO THINK ABOUT HOW TO IMPROOVE THIS
-                timeForTurn = gameRoomSettings.TimerDuration;
 
                 gameRoom.State = GameState.PlacingShips;
                 _db.GameRooms[gameRoom.Name] = gameRoom;
@@ -310,7 +308,7 @@ namespace BattleShipAPI.Hubs
                     "PlayerTurn",
                     gameRoom.GetNextTurnPlayerId(players),
                     startTime,
-                    timeForTurn);
+                    gameRoom.TimerDuration);
             }
         }
 
@@ -325,14 +323,13 @@ namespace BattleShipAPI.Hubs
                 var players = _db.Connections.Values.Where(c => c.GameRoomName == connection.GameRoomName).ToList();
 
                 var startTime = DateTime.UtcNow;
-                
                 await _notificationService.NotifyGroup(
                     Clients,
                     gameRoom.Name,
                     "PlayerTurn",
                     gameRoom.GetNextTurnPlayerId(players),
                     startTime,
-                    timeForTurn);
+                    gameRoom.TimerDuration);
             }
         }
 
@@ -413,7 +410,7 @@ namespace BattleShipAPI.Hubs
                         "PlayerTurn",
                         gameRoom.GetNextTurnPlayerId(players),
                         startTime,
-                        timeForTurn);
+                        gameRoom.TimerDuration);
                 }
 
                 _db.GameRooms[gameRoom.Name] = gameRoom;
@@ -583,7 +580,7 @@ namespace BattleShipAPI.Hubs
                                     "PlayerTurn", 
                                     gameRoom.GetNextTurnPlayerId(players), 
                                     startTime,
-                                    timeForTurn);
+                                    gameRoom.TimerDuration);
                             }
 
                             _db.Connections[Context.ConnectionId] = connection;

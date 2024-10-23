@@ -1,24 +1,29 @@
+using BattleShipAPI.Enums;
 using BattleShipAPI.Factories.LevelsFactory;
+using BattleShipAPI.GameItems.Boards;
 using BattleShipAPI.Models;
 
 namespace BattleShipAPI.Factories;
 
 public static class GameRoomSettingsCreator
 {
-    public static Dictionary<(string, int), GameRoomSettings> GameSettingsTemplates = new Dictionary<(string, int), GameRoomSettings>();
+    public static Dictionary<(GameMode, int), GameRoomSettings> GameSettingsTemplates = new Dictionary<(GameMode, int), GameRoomSettings>();
 
-    public static GameRoomSettings GetGameRoomSettings(List<UserConnection> players, string mode)
+    public static GameRoomSettings GetGameRoomSettings(List<UserConnection> players, GameMode mode)
     {
         if (!GameSettingsTemplates.TryGetValue((mode, players.Count), out var template))
         {
-            // 4. DESIGN PATTERN: Abstract Factory
+            //board generation
+            var board = GetGameBoard(players.Count);
 
-            //TODO FIX with supperattacks and using factories better
+            // 4. DESIGN PATTERN: Abstract Factory
             var abstractFactory = GetLevelFactory(mode);
             var shipSettings = abstractFactory.CreateShipsConfig();
-            var timer = abstractFactory.GetTimerDuration();
-            var settings = GetGameFactory(players).BuildGameRoomSettings(shipSettings, timer);
+            var supperAttacksSettings = abstractFactory.CreateSuperAttacksConfig();
+            abstractFactory.SetTimer();
+            var settings = abstractFactory.CreateGameRoomSettings(shipSettings, supperAttacksSettings, board);
 
+            // DSIGN PATTERN: Clonable
             template = settings;
             GameSettingsTemplates[(mode, players.Count)] = template;
         }
@@ -30,24 +35,24 @@ public static class GameRoomSettingsCreator
         return gameRoomSettings;
     }
     
-    private static AbstractGameSettingsFactory GetGameFactory(List<UserConnection> players)
+    private static Board GetGameBoard(int playersCount)
     {
-        return players.Count switch
+        return playersCount switch
         {
-            2 => new TwoPlayersGameSettingsFactory(players),
-            3 => new ThreePlayersGameSettingsFactory(players),
-            4 => new FourPlayersGameSettingsFactory(players),
+            2 => new TwoPlayersBoard(),
+            3 => new ThreePlayersBoard(),
+            4 => new FourPlayersBoard(),
             _ => throw new ArgumentException("Invalid number of players")
         };
     }
 
-    private static AbstractLevelFactory GetLevelFactory(string mode)
+    private static AbstractLevelFactory GetLevelFactory(GameMode mode)
     {
         return mode switch
         {
-            "normal" => new NormalLevelFactory(),
-            "rapid" => new RapidLevelFactory(),
-            "mobility" => new MobilityLevelFactory(),
+            GameMode.Normal => new NormalLevelFactory(),
+            GameMode.Rapid => new RapidLevelFactory(),
+            GameMode.Mobility => new MobilityLevelFactory(),
             _ => throw new ArgumentException("Invalid game mode")
         };
     }

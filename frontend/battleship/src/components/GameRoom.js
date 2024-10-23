@@ -12,6 +12,7 @@ import MessageContainer from "./MessageContainer";
 import BoardComponent from "./BoardComponent";
 import { PlayerFleet } from "./PlayerFleet";
 import SuperAttackSelector from "./SuperAttackSelector";
+import GameModeSelector from "./GameModeSelector";
 
 const GameRoom = ({
   messages,
@@ -34,7 +35,8 @@ const GameRoom = ({
   turnEndTime,
   playerTurnTimeEnded,
   superAttacks,
-  isPlayerReady
+  isPlayerReady,
+  confirmGameMode,
 }) => {
   const [currentlyPlacing, setCurrentlyPlacing] = useState(null);
   const [availableShips, setAvailableShips] = useState(shipsToPlace);
@@ -45,20 +47,21 @@ const GameRoom = ({
   }, [shipsToPlace]);
 
   useEffect(() => {
-    if (turnEndTime) {
+    console.log("turnEndTime", turnEndTime)
+    if (turnEndTime && turnEndTime !== -1) {
       const interval = setInterval(() => {
         const timeLeft = Math.max(0, (turnEndTime - new Date()) / 1000);
         setTimer(timeLeft.toFixed(1));
         if (timeLeft <= 0) {
           clearInterval(interval);
-          if(playerId === playerTurn)
-          {
+          if (playerId === playerTurn) {
             playerTurnTimeEnded();
           }
         }
       }, 100);
       return () => clearInterval(interval);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [turnEndTime]);
 
   useEffect(() => {
@@ -68,7 +71,7 @@ const GameRoom = ({
   }, [playerTurn, playerId]);
 
   const handleSelectAttack = (attackName) => {
-    setAttackType(attackName); 
+    setAttackType(attackName);
   };
 
   const selectShip = (shipName) => {
@@ -129,20 +132,22 @@ const GameRoom = ({
 
             {gameState === 3 && (
               <>
-              <Typography variant="h6" color="primary" gutterBottom>
-                {playerTurn === playerId ? "Your Turn" : "Opponent's Turn"}
-              </Typography>
-              <Typography variant="h6" align="center" color="error">
-                {playerTurn === playerId ?  `Time left for turn: ${timer}` : "Waiting for opponent..."}
-              </Typography>
-              <SuperAttackSelector
+                <Typography variant="h6" color="primary" gutterBottom>
+                  {playerTurn === playerId ? "Your Turn" : "Opponent's Turn"}
+                </Typography>
+                <Typography variant="h6" align="center" color="error">
+                  {playerTurn === playerId
+                    ? `Time left for turn: ${timer}`
+                    : "Waiting for opponent..."}
+                </Typography>
+                <SuperAttackSelector
                   superAttacks={superAttacks}
                   attackType={attackType}
                   onSelectAttack={handleSelectAttack}
                 />
-            </>
+              </>
             )}
-           
+
             {board ? (
               <Box sx={{ display: "flex", justifyContent: "center" }}>
                 <BoardComponent
@@ -175,18 +180,15 @@ const GameRoom = ({
             {/* Conditionally render Controls Box */}
             {(gameState === 1 && isModerator) ||
             (gameState === 2 && isModerator) ||
-            (gameState === 4 && isModerator) ? (
+            (gameState === 4 && isModerator) ||
+            (gameState === 5 && isModerator) ? (
               <Paper elevation={3} sx={{ p: 2 }}>
                 <Stack spacing={2} alignItems="center">
                   {gameState === 1 && isModerator && (
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={generateBoardAction}
-                      fullWidth
-                    >
-                      Generate Board
-                    </Button>
+                    <>
+                      <h1>Select Game Mode</h1>
+                      <GameModeSelector confirmGameMode={confirmGameMode} />
+                    </>
                   )}
                   {gameState === 2 && isModerator && (
                     <Button
@@ -206,6 +208,16 @@ const GameRoom = ({
                       fullWidth
                     >
                       Restart Game
+                    </Button>
+                  )}
+                  {gameState === 5 && isModerator && (
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={generateBoardAction}
+                      fullWidth
+                    >
+                      Generate Board
                     </Button>
                   )}
                 </Stack>

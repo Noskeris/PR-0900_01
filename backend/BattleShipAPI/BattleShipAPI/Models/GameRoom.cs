@@ -22,6 +22,8 @@ namespace BattleShipAPI.Models
     
         public List<SuperAttackConfig> SuperAttacksConfig { get; private set; }
 
+        public int TimerDuration { get; set; }
+
         public string TurnPlayerId { get; private set; } = string.Empty;
         
         public void SetSettings(GameRoomSettings settings)
@@ -29,6 +31,7 @@ namespace BattleShipAPI.Models
             Board = settings.Board;
             ShipsConfig = settings.Ships.ShipsConfig;
             SuperAttacksConfig = settings.SuperAttacks.SuperAttacksConfig;
+            TimerDuration = settings.TimerDuration;
         }
 
         public string GetNextTurnPlayerId(List<UserConnection> players)

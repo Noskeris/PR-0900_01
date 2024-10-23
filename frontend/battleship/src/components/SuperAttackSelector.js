@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { Box, Button, Typography, Stack } from "@mui/material";
 
 const SuperAttackSelector = ({ superAttacks, onSelectAttack, attackType }) => {
@@ -18,7 +18,7 @@ const SuperAttackSelector = ({ superAttacks, onSelectAttack, attackType }) => {
             key={attack.name}
             variant={attackType === attack.name ? "contained" : "outlined"}
             onClick={() => handleSelectAttack(attack.name)}
-            disabled={attack.count <= 0} // Disable if no attacks left
+            disabled={attack.count <= 0}
           >
             {attack.name} ({attack.count} left)
           </Button>

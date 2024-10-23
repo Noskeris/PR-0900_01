@@ -23,9 +23,17 @@ namespace BattleShipAPI.Factories.LevelsFactory
             return new LevelShips(shipConfigs);
         }
 
-        //TODO SUPPER ATTACKS
-        //var superAttacksBuilder = new SuperAttacksBuilder();
-        //SuperAttacksConfig = new FourPlayersSuperAttacks(superAttacksBuilder);
+        public override SuperAttacks CreateSuperAttacksConfig()
+        {
+            var superAttacksConfigs = new List<SuperAttackConfig>
+            {
+                this.PlusAttackBuilder.StartNormal().Build(),
+                this.CrossAttackBuilder.StartNormal().Build(),
+                this.BoomAttackBuilder.StartNormal().Build(),
+            };
+
+            return new LevelSuperAttacks(superAttacksConfigs);
+        }
 
         public override void SetTimer()
         {

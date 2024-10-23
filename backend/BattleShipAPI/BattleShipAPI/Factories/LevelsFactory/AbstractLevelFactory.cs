@@ -1,5 +1,8 @@
 ﻿using BattleShipAPI.Builders.ShipConfigs;
+using BattleShipAPI.Builders.SuperAttackConfigs;
+using BattleShipAPI.GameItems.Boards;
 using BattleShipAPI.GameItems.Ships;
+using BattleShipAPI.GameItems.SuperAttacks;
 using BattleShipAPI.Models;
 
 namespace BattleShipAPI.Factories.LevelsFactory
@@ -11,6 +14,9 @@ namespace BattleShipAPI.Factories.LevelsFactory
         protected ShipConfigBuilder CruiserBuilder;
         protected ShipConfigBuilder SubmarineBuilder;
         protected ShipConfigBuilder DestroyerBuilder;
+        protected SuperAttackConfigBuilder PlusAttackBuilder;
+        protected SuperAttackConfigBuilder CrossAttackBuilder;
+        protected SuperAttackConfigBuilder BoomAttackBuilder;
 
         protected int timerDuration;
 
@@ -21,13 +27,17 @@ namespace BattleShipAPI.Factories.LevelsFactory
             CruiserBuilder = new CruiserConfigBuilder();
             SubmarineBuilder = new SubmarineConfigBuilder();
             DestroyerBuilder = new DestroyerConfigBuilder();
+            PlusAttackBuilder = new PlusAttackConfigBuilder();
+            CrossAttackBuilder = new CrossAttackConfigBuilder();
+            BoomAttackBuilder = new BoomAttackConfigBuilder();
         }
 
         public abstract Ships CreateShipsConfig();
+        public abstract SuperAttacks CreateSuperAttacksConfig();
         public abstract void SetTimer();
-        public int GetTimerDuration()
+        public GameRoomSettings CreateGameRoomSettings(Ships ships, SuperAttacks superAttacks, Board board)
         {
-            return timerDuration;
+            return new GameRoomSettings(ships, superAttacks, board, timerDuration);
         }
     }
 }
