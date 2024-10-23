@@ -106,7 +106,8 @@ export const App = () => {
       newConnection.on("UpdatedSuperAttacksConfig", (superAttacksConfig) => {
         const mappedSuperAttacks = superAttacksConfig
           .map((superAttack) => {
-              const {name} = superAttackTypesMapping[superAttack.attackType]
+            console.log("superAttack", superAttack)
+              const name = superAttackTypesMapping[superAttack.attackType]
 
               return {
                 name: name,
@@ -117,6 +118,7 @@ export const App = () => {
           .filter(Boolean);
         
         setSuperAttacks(mappedSuperAttacks);
+        console.log("mappedSuperAttacks", mappedSuperAttacks)
       });
 
       newConnection.on("UpdatedShipsConfig", (shipsConfig) => {

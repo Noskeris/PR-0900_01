@@ -1,4 +1,5 @@
 ﻿using BattleShipAPI.Enums;
+using System.Drawing;
 
 namespace BattleShipAPI.Models
 {
@@ -25,7 +26,10 @@ namespace BattleShipAPI.Models
             return shipsConfig.Select(shipConfig => new ShipConfig()
             {
                 ShipType = shipConfig.ShipType,
-                Count = shipConfig.Count - PlacedShips.Count(x => x.ShipType == shipConfig.ShipType)
+                Count = shipConfig.Count - PlacedShips.Count(x => x.ShipType == shipConfig.ShipType),
+                Size = shipConfig.Size,
+                HasShield = shipConfig.HasShield,
+                HasMobility = shipConfig.HasMobility
             }).ToList();
         }
         
