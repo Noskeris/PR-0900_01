@@ -7,13 +7,19 @@ using BattleShipAPI.Notifications;
 using BattleShipAPI.Repository;
 using Microsoft.AspNetCore.SignalR;
 
+//TODO add ship shield logic
+//TODO add ship mobility logic
+//TODO DESIGN PATTERN decorator
+//TODO DESIGN PATTERN adapter
+//TODO DESIGN PATTERN facade
+//TODO DESIGN PATTERN bridge
+
 namespace BattleShipAPI.Hubs
 {
     public class GameHub : Hub
     {
         private readonly InMemoryDB _db;
         private readonly INotificationService _notificationService;
-        private readonly int timeForTurn = 30;
 
         public GameHub(INotificationService notificationService)
         {
@@ -36,7 +42,7 @@ namespace BattleShipAPI.Hubs
             }
 
             if (_db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom) &&
-                gameRoom.State != GameState.NotStarted)
+                (gameRoom.State != GameState.NotStarted && gameRoom.State != GameState.GameModeConfirmed))
             {
                 await _notificationService.NotifyClient(
                     Clients,
@@ -72,19 +78,6 @@ namespace BattleShipAPI.Hubs
             {
                 connection.IsModerator = true;
                 _db.GameRooms[connection.GameRoomName] = new GameRoom() { Name = connection.GameRoomName };
-                
-                await _notificationService.NotifyClient(
-                    Clients,
-                    Context.ConnectionId,
-                    "AvailableShipsForConfiguration",
-                    new List<Ship>()
-                    {
-                        new() { ShipType = ShipType.Carrier, Size = 5 },
-                        new() { ShipType = ShipType.Battleship, Size = 4 },
-                        new() { ShipType = ShipType.Cruiser, Size = 3 },
-                        new() { ShipType = ShipType.Submarine, Size = 2 },
-                        new() { ShipType = ShipType.Destroyer, Size = 1 }
-                    });
             }
 
             _db.Connections[Context.ConnectionId] = connection;
@@ -109,22 +102,42 @@ namespace BattleShipAPI.Hubs
                 $"{connection.Username} has joined the game room {connection.GameRoomName}");
         }
 
-        public async Task GenerateBoard()
+        public async Task ConfirmGameMode(GameMode gameMode)
         {
             if (_db.Connections.TryGetValue(Context.ConnectionId, out var connection)
                 && _db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom)
-                && gameRoom.State == GameState.NotStarted
+                && gameRoom.State == GameState.NotStarted)
+            {
+                var players = _db.Connections.Values
+                    .Where(c => c.GameRoomName == connection.GameRoomName)
+                    .ToList();
+
+                gameRoom.Mode = gameMode;
+                gameRoom.State = GameState.GameModeConfirmed;
+
+                await _notificationService.NotifyGroup(
+                    Clients,
+                    gameRoom.Name,
+                    "GameStateChanged",
+                    (int)gameRoom.State);
+            }
+        }
+
+        public async Task GenerateBoard(GameMode gameMode)
+        {
+            if (_db.Connections.TryGetValue(Context.ConnectionId, out var connection)
+                && _db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom)
+                && gameRoom.State == GameState.GameModeConfirmed
                 && connection.IsModerator)
             {
                 var players = _db.Connections.Values
                     .Where(c => c.GameRoomName == connection.GameRoomName)
                     .ToList();
 
-                if (players.Count == 0)
+                if (players.Count < 2)
                     return;
-                
-                var gameRoomSettings = GameRoomSettingsCreator.GetGameRoomSettings(players);
-                
+
+                var gameRoomSettings = GameRoomSettingsCreator.GetGameRoomSettings(players, gameMode);
                 gameRoom.SetSettings(gameRoomSettings);
 
                 gameRoom.State = GameState.PlacingShips;
@@ -157,6 +170,7 @@ namespace BattleShipAPI.Hubs
                 && _db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom)
                 && gameRoom.State == GameState.PlacingShips)
             {
+
                 var board = gameRoom.Board;
                 var player = _db.Connections[Context.ConnectionId];
                 var shipConfig = gameRoom.ShipsConfig
@@ -184,6 +198,8 @@ namespace BattleShipAPI.Hubs
                     return;
                 }
 
+                player.PlacingActionHistory.AddInitialState(player.PlacedShips, gameRoom.Board);
+
                 if (!board.TryPutShipOnBoard(
                         placedShip.StartX,
                         placedShip.StartY,
@@ -201,6 +217,8 @@ namespace BattleShipAPI.Hubs
                 }
 
                 player.PlacedShips.Add(placedShip);
+                player.PlacingActionHistory.AddAction(player.PlacedShips, gameRoom.Board);
+
                 _db.GameRooms[gameRoom.Name] = gameRoom;
                 _db.Connections[Context.ConnectionId] = player;
 
@@ -242,7 +260,7 @@ namespace BattleShipAPI.Hubs
                 await _notificationService.NotifyClient(
                     Clients,
                     Context.ConnectionId,
-                    "PlayerNotReady",
+                    "PlayerIsReady",
                     "You are ready to start the game."); 
             }
         }
@@ -301,7 +319,7 @@ namespace BattleShipAPI.Hubs
                     "PlayerTurn",
                     gameRoom.GetNextTurnPlayerId(players),
                     startTime,
-                    timeForTurn);
+                    gameRoom.TimerDuration);
             }
         }
 
@@ -316,14 +334,13 @@ namespace BattleShipAPI.Hubs
                 var players = _db.Connections.Values.Where(c => c.GameRoomName == connection.GameRoomName).ToList();
 
                 var startTime = DateTime.UtcNow;
-                
                 await _notificationService.NotifyGroup(
                     Clients,
                     gameRoom.Name,
                     "PlayerTurn",
                     gameRoom.GetNextTurnPlayerId(players),
                     startTime,
-                    timeForTurn);
+                    gameRoom.TimerDuration);
             }
         }
 
@@ -383,7 +400,7 @@ namespace BattleShipAPI.Hubs
                 var context = new AttackContext(strategy);
                 var attackCells = context.ExecuteAttack(x, y, gameRoom, connection);
 
-                foreach (var (xCell, yCell)  in attackCells)
+                foreach (var (xCell, yCell) in attackCells)
                 {
                     await AttackCellByOne(xCell, yCell, players, gameRoom, connection);
                 }
@@ -404,7 +421,7 @@ namespace BattleShipAPI.Hubs
                         "PlayerTurn",
                         gameRoom.GetNextTurnPlayerId(players),
                         startTime,
-                        timeForTurn);
+                        gameRoom.TimerDuration);
                 }
 
                 _db.GameRooms[gameRoom.Name] = gameRoom;
@@ -538,6 +555,7 @@ namespace BattleShipAPI.Hubs
 
                             break;
 
+                        case GameState.GameModeConfirmed:
                         case GameState.PlacingShips:
                             connection.HasDisconnected = true;
                             _db.Connections[Context.ConnectionId] = connection;
@@ -572,8 +590,8 @@ namespace BattleShipAPI.Hubs
                                     gameRoom.Name,
                                     "PlayerTurn", 
                                     gameRoom.GetNextTurnPlayerId(players), 
-                                    startTime, 
-                                    timeForTurn);
+                                    startTime,
+                                    gameRoom.TimerDuration);
                             }
 
                             _db.Connections[Context.ConnectionId] = connection;
@@ -633,6 +651,183 @@ namespace BattleShipAPI.Hubs
             }
         }
 
+        public async Task UndoShipPlacement()
+        {
+            if (_db.Connections.TryGetValue(Context.ConnectionId, out var connection)
+                && _db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom)
+                && gameRoom.State == GameState.PlacingShips)
+            {
+                var player = _db.Connections[Context.ConnectionId];
+                var previousState = player.PlacingActionHistory.Undo();
+                if (previousState == null)
+                {
+                    await _notificationService.NotifyClient(
+                        Clients,
+                        Context.ConnectionId,
+                        "FailedToUndo",
+                        "No actions to undo.");
+                    return;
+                }
+
+                // Restore the board and placed ships
+                player.PlacedShips = previousState.Value.PlacedShips;
+
+                gameRoom.SetBoard(previousState.Value.BoardState);
+                _db.GameRooms[gameRoom.Name] = gameRoom;
+                _db.Connections[Context.ConnectionId] = player;
+
+                await _notificationService.NotifyGroup(
+                    Clients,
+                    gameRoom.Name,
+                    "BoardUpdated",
+                    gameRoom.Name,
+                    previousState.Value.BoardState);
+
+                await _notificationService.NotifyClient(
+                    Clients,
+                    Context.ConnectionId,
+                    "UpdatedShipsConfig",
+                    player.GetAllowedShipsConfig(gameRoom.ShipsConfig));
+            }
+        }
+
+        public async Task RedoShipPlacement()
+        {
+            if (_db.Connections.TryGetValue(Context.ConnectionId, out var connection)
+                && _db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom)
+                && gameRoom.State == GameState.PlacingShips)
+            {
+                var player = _db.Connections[Context.ConnectionId];
+                var nextState = player.PlacingActionHistory.Redo();
+                if (nextState == null)
+                {
+                    await _notificationService.NotifyClient(
+                        Clients,
+                        Context.ConnectionId,
+                        "FailedToRedo",
+                        "No actions to redo.");
+                    return;
+                }
+
+                // Restore the board and placed ships
+                player.PlacedShips = nextState.Value.PlacedShips;
+                gameRoom.SetBoard(nextState.Value.BoardState);
+
+                _db.GameRooms[gameRoom.Name] = gameRoom;
+                _db.Connections[Context.ConnectionId] = player;
+
+                await _notificationService.NotifyGroup(
+                    Clients,
+                    gameRoom.Name,
+                    "BoardUpdated",
+                    gameRoom.Name,
+                    gameRoom.Board);
+
+                await _notificationService.NotifyClient(
+                    Clients,
+                    Context.ConnectionId,
+                    "UpdatedShipsConfig",
+                    player.GetAllowedShipsConfig(gameRoom.ShipsConfig));
+            }
+        }
+
+
+        public async Task HandlePlayerCommand(string command)
+        {
+            if (_db.Connections.TryGetValue(Context.ConnectionId, out var connection)
+                && _db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom)
+                && (gameRoom.State == GameState.NotStarted || gameRoom.State == GameState.GameModeConfirmed 
+                || gameRoom.State == GameState.PlacingShips))
+            {
+                var commandParts = command.Split(' ');
+                var action = commandParts[0].ToLower();
+                switch (action)
+                {
+                    case "ready":
+                        await SetPlayerToReady();
+                        break;
+                    case "start":
+                        await StartGame();
+                        break;
+                    case "gamemode":
+                        if (Enum.TryParse<GameMode>(commandParts[1], true, out var gameMode))
+                        {
+                            await ConfirmGameMode(gameMode);
+                        }
+                        break;
+                    case "generateboard":
+                        await GenerateBoard(gameRoom.Mode);
+                        break;
+                    case "addship":
+                        if (commandParts.Length >= 5 &&
+                            Enum.TryParse<ShipType>(commandParts[1], true, out var shipType) &&
+                            int.TryParse(commandParts[2], out var startX) &&
+                            int.TryParse(commandParts[3], out var startY) &&
+                            Enum.TryParse<ShipOrientation>(commandParts[4], true, out var shipOrientation))
+                        {
+                            int endX = startX;
+                            int endY = startY;
+
+                            var shipConfig = gameRoom.ShipsConfig.FirstOrDefault(config => config.ShipType == shipType);
+
+                            if (shipConfig == null)
+                            {
+                                await _notificationService.NotifyClient(
+                                Clients,
+                                Context.ConnectionId,
+                                "FailedToAddShip",
+                                "No available ships in config.");
+                            }
+
+                            int shipSize = shipConfig!.Size;
+
+                            if (shipOrientation == ShipOrientation.Horizontal)
+                            {
+                                endX = startX + shipSize - 1;
+                            }
+                            else if (shipOrientation == ShipOrientation.Vertical)
+                            {
+                                endY = startY + shipSize - 1;
+                            }
+
+                            var placedShip = new PlacedShip
+                            {
+                                ShipType = shipType,
+                                StartX = startX,
+                                StartY = startY,
+                                EndX = endX,
+                                EndY = endY
+                            };
+
+                            await AddShip(placedShip);
+                        }
+                        else
+                        {
+                            await _notificationService.NotifyClient(
+                                Clients,
+                                Context.ConnectionId,
+                                "FailedToAddShip",
+                                "Invalid command format for adding a ship.");
+                        }
+                        break;
+                    case "undoplacement":
+                        await UndoShipPlacement();
+                        break;
+                    case "redoplacement":
+                        await RedoShipPlacement();
+                        break;
+
+                    default:
+                        await _notificationService.NotifyClient(
+                            Clients,
+                            Context.ConnectionId,
+                            "UnknownCommand",
+                            $"Unknown command: {command}");
+                        break;
+                }
+            }
+        }
+
         private async Task RestartGame(UserConnection connection)
         {
             if (_db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom)
@@ -657,6 +852,7 @@ namespace BattleShipAPI.Hubs
                         _db.Connections[x.PlayerId].HasDisconnected = false;
                         _db.Connections[x.PlayerId].PlacedShips.Clear();
                         _db.Connections[x.PlayerId].UsedSuperAttacks.Clear();
+                        _db.Connections[x.PlayerId].PlacingActionHistory = new();
                     });
 
                 await _notificationService.NotifyGroup(
@@ -664,19 +860,6 @@ namespace BattleShipAPI.Hubs
                     gameRoom.Name, 
                     "GameStateChanged", 
                     (int)gameRoom.State);
-
-                await _notificationService.NotifyClient(
-                    Clients,
-                    connection.PlayerId,
-                    "AvailableShipsForConfiguration",
-                    new List<Ship>()
-                    {
-                        new() { ShipType = ShipType.Carrier, Size = 5 },
-                        new() { ShipType = ShipType.Battleship, Size = 4 },
-                        new() { ShipType = ShipType.Cruiser, Size = 3 },
-                        new() { ShipType = ShipType.Submarine, Size = 2 },
-                        new() { ShipType = ShipType.Destroyer, Size = 1 }
-                    });
 
                 await _notificationService.NotifyClient(
                     Clients,

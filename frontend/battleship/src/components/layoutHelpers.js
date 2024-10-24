@@ -130,20 +130,19 @@ export const calculateAttackTypeHover = (cells, playerId, x, y, attackType) => {
     return cells;
   }
 
-  const updatedCells = cells.map(row => row.map(cell => ({ ...cell }))); // Create a deep copy of the cells
+  const updatedCells = cells.map(row => row.map(cell => ({ ...cell }))); 
 
   const applyHoverOver = (newX, newY) => {
     if (
       newX >= 0 &&
-      newX < updatedCells.length &&         // Check if newX is within the row length
+      newX < updatedCells.length &&         
       newY >= 0 &&
-      newY < updatedCells[0].length &&      // Check if newY is within the column length
-      updatedCells[newX][newY].ownerId !== playerId // Check if the cell is not owned by the player
+      newY < updatedCells[0].length &&     
+      updatedCells[newX][newY].ownerId !== playerId 
     ) {
       const element = document.getElementById(`${newX}-${newY}`);
       const classList = element.classList;
 
-      // Apply hover effect only if the cell is in default or hover state
       if (classList.contains("defaultcell") || classList.contains("hoverOver")) {
         updatedCells[newX][newY].state = "hoverOver";
       }

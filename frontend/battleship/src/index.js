@@ -5,22 +5,10 @@ import WaitingRoom from "./components/WaitingRoom.js";
 import { HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
 import GameRoom from "./components/GameRoom.js";
 import "./css/style.css";
-//import GameComponent from './components/GameComponent.js';
+import { superAttackTypesMapping } from "./constants/SuperAttackTypes.js";
+import { shipTypesMapping } from "./constants/ShipTypesMapping.js";
 
 export const App = () => {
-  const shipTypesMapping = {
-    1: { name: 'carrier', length: 5 },
-    2: { name: 'battleship', length: 4 },
-    3: { name: 'cruiser', length: 3 },
-    4: { name: 'submarine', length: 2 },
-    5: { name: 'destroyer', length: 1 },
-  };
-  const superAttackTypesMapping = {
-    2: "plus",
-    3: "cross",
-    4: "boom"
-  }
-
   const [connection, setConnection] = useState();
   const [messages, setMessages] = useState([]);
   const [isModerator, setIsModerator] = useState(false);
@@ -35,6 +23,7 @@ export const App = () => {
   const [timer, setTimer] = useState(0);
   const [superAttacks, setSuperAttacks] = useState();
   const [isPlayerReady, setIsPlayerReady] = useState(false);
+  const [gameMode, setGameMode] = useState(null);
 
 
   const joinGameRoom = async (usernameInput, gameRoomName) => {
@@ -71,6 +60,9 @@ export const App = () => {
       newConnection.on("GameStateChanged", (newGameState) => {
         console.log("Game state changed to:", newGameState);
         setGameState(newGameState);
+        if(newGameState === 4){
+          setGameMode(null);
+        }
       });
 
       newConnection.on("BoardUpdated", (gameRoomName, board) => {
@@ -88,6 +80,11 @@ export const App = () => {
       newConnection.on("PlayerTurn", (playerId, turnStartTime, turnDuration) => {
         setPlayerTurn(playerId);
         const startTime = new Date(turnStartTime);
+        if(turnDuration === -1)
+        {
+          setTurnEndTime(-1);
+          return;
+        }
         setTurnEndTime(new Date(startTime.getTime() + turnDuration * 1000));
       })
 
@@ -107,9 +104,15 @@ export const App = () => {
         setMessages((prevMessages) => [...prevMessages, { username, msg }]);
       });
 
+      newConnection.on("PlayerIsReady", (message) => {
+        console.log("PlayerIsReady", message);
+        setIsPlayerReady(true);
+      })
+
       newConnection.on("UpdatedSuperAttacksConfig", (superAttacksConfig) => {
         const mappedSuperAttacks = superAttacksConfig
           .map((superAttack) => {
+            console.log("superAttack", superAttack)
               const name = superAttackTypesMapping[superAttack.attackType]
 
               return {
@@ -121,23 +124,23 @@ export const App = () => {
           .filter(Boolean);
         
         setSuperAttacks(mappedSuperAttacks);
+        console.log("mappedSuperAttacks", mappedSuperAttacks)
       });
-
-      newConnection.on("AvailableShipsForConfiguration", (shipConfig) => {
-        //TODO LATER
-      })
 
       newConnection.on("UpdatedShipsConfig", (shipsConfig) => {
         const mappedShips = shipsConfig
           .map((ship) => {
-            const { name, length } = shipTypesMapping[ship.shipType];
+            console.log("ship", ship)
+            const name = shipTypesMapping[ship.shipType];
             
             if (ship.count > 0) {
               return {
-                name,
-                length,
+                name: name,
+                length: ship.size,
                 placed: null,
                 count: ship.count,
+                hasShield: ship.hasShield,
+                hasMobility: ship.hasMobility
               };
             }
             
@@ -168,7 +171,7 @@ export const App = () => {
 
   const generateBoardAction = async () => {
     try {
-      await connection.invoke("GenerateBoard");
+      await connection.invoke("GenerateBoard", gameMode);
       console.log("UI generate board");
     } catch (error) {
       console.log("Generate board error: ", error);
@@ -188,6 +191,7 @@ export const App = () => {
     try {
       await connection.invoke("RestartGame");
       console.log("RestartGame invoked");
+      setGameMode(null);
     } catch (error) {
       console.log("Error RestartGame :", error);
     }
@@ -230,6 +234,25 @@ export const App = () => {
     }
   }
 
+  const confirmGameMode = async (gameMode) => {
+    try {
+      await connection.invoke("ConfirmGameMode", gameMode);
+      setGameMode(gameMode);
+      console.log("ConfirmGameMode invoked");
+    } catch (error) {
+      console.log("Error PlayerTurnTimeEnded", error);
+    }
+  }
+
+  const sendCommand = async (command) => {
+    try {
+      await connection.invoke("HandlePlayerCommand", command);
+      console.log("HandlePlayerCommand invoked");
+    } catch (error) {
+      console.log("Error HandlePlayerCommand", error);
+    }
+  }
+
 
   return (
     <>
@@ -259,6 +282,8 @@ export const App = () => {
           playerTurnTimeEnded={playerTurnTimeEnded}
           superAttacks={superAttacks}
           isPlayerReady={isPlayerReady}
+          confirmGameMode={confirmGameMode}
+          sendCommand={sendCommand}
         />
       )}
     </>

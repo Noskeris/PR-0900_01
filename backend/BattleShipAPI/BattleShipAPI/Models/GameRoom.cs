@@ -14,19 +14,29 @@ namespace BattleShipAPI.Models
 
         public GameState State { get; set; } = GameState.NotStarted;
 
+        public GameMode Mode { get; set; } = GameMode.Normal;
+
         public Board Board { get; private set; }
         
         public List<ShipConfig> ShipsConfig { get; private set; }
     
         public List<SuperAttackConfig> SuperAttacksConfig { get; private set; }
 
+        public int TimerDuration { get; set; }
+
         public string TurnPlayerId { get; private set; } = string.Empty;
+
+        public void SetBoard(Board board)
+        {
+            Board = board;
+        }
         
         public void SetSettings(GameRoomSettings settings)
         {
             Board = settings.Board;
             ShipsConfig = settings.Ships.ShipsConfig;
             SuperAttacksConfig = settings.SuperAttacks.SuperAttacksConfig;
+            TimerDuration = settings.TimerDuration;
         }
 
         public string GetNextTurnPlayerId(List<UserConnection> players)

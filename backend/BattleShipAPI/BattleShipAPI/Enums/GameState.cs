@@ -5,6 +5,7 @@
         NotStarted = 1,
         PlacingShips = 2,
         InProgress = 3,
-        Finished = 4
+        Finished = 4,
+        GameModeConfirmed = 5
     }
 }
