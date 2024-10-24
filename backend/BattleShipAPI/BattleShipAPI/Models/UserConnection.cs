@@ -20,7 +20,9 @@ namespace BattleShipAPI.Models
         public List<PlacedShip> PlacedShips { get; set; } = new();
         
         public List<SuperAttackConfig> UsedSuperAttacks { get; set; } = new();
-        
+
+        public PlacingActionHistory PlacingActionHistory { get; set; } = new();
+
         public List<ShipConfig> GetAllowedShipsConfig(List<ShipConfig> shipsConfig)
         {
             return shipsConfig.Select(shipConfig => new ShipConfig()

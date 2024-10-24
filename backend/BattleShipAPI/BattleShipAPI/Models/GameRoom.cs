@@ -25,6 +25,11 @@ namespace BattleShipAPI.Models
         public int TimerDuration { get; set; }
 
         public string TurnPlayerId { get; private set; } = string.Empty;
+
+        public void SetBoard(Board board)
+        {
+            Board = board;
+        }
         
         public void SetSettings(GameRoomSettings settings)
         {
