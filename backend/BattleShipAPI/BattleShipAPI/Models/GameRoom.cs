@@ -10,7 +10,7 @@ namespace BattleShipAPI.Models
 
         public GameRoomSettings Settings { get; set; } = new();
 
-        public Board Board { get; set; } = new();
+        public Board Board { get; set; }
 
         public string TurnPlayerId { get; private set; } = string.Empty;
 
