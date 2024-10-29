@@ -71,7 +71,7 @@ namespace BattleShipAPI.Hubs
             {
                 Board gameBoard;
 
-                var players = _db.Connections.Values.Where(c => c.GameRoomName == connection.GameRoomName).ToList();
+                var players = _db.Connections.Values.Where(c => c.GameRoomName == connection.GameRoomName).OrderBy(x => x.PlayerId).ToList();
 
                 if (players.Count == 0)
                     return;

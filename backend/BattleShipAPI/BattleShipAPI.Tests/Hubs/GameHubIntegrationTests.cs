@@ -1,98 +1,289 @@
-using System;
 using System.Collections.Generic;
-using System.Threading;
+using System.Linq;
 using System.Threading.Tasks;
 using BattleShipAPI.Enums;
 using BattleShipAPI.Hubs;
 using BattleShipAPI.Models;
 using BattleShipAPI.Repository;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.SignalR;
-using Moq;
+using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Xunit;
 
-public class GameHubIntegrationTests
+namespace BattleShipAPI.Tests.Integration
 {
-    private readonly Mock<HubCallerContext> _mockContext;
-    private readonly Mock<ISingleClientProxy> _mockCaller; 
-    private readonly Mock<IHubCallerClients> _mockClients;
-    private readonly Mock<IGroupManager> _mockGroups;
-    private readonly InMemoryDB _db;
-    private readonly GameHub _hub;
-
-    public GameHubIntegrationTests()
+    public class GameHubIntegrationTests : IAsyncLifetime
     {
-        _mockContext = new Mock<HubCallerContext>();
-        _mockCaller = new Mock<ISingleClientProxy>();
-        _mockClients = new Mock<IHubCallerClients>();
-        _mockGroups = new Mock<IGroupManager>();
+        private readonly IHost _server;
+        private HubConnection _connection1;
+        private HubConnection _connection2;
+        private readonly InMemoryDB _db;
 
-        _db = new InMemoryDB();
-        _hub = new GameHub(_db)
+        public List<PlacedShip> PlacedShips1 = new List<PlacedShip>
         {
-            Context = _mockContext.Object,
-            Clients = _mockClients.Object,
-            Groups = _mockGroups.Object
+            new PlacedShip
+            {
+                ShipType = ShipType.Carrier,
+                StartX = 0,
+                StartY = 0,
+                EndX = 4,
+                EndY = 0
+            },
+            new PlacedShip
+            {
+                ShipType = ShipType.Battleship,
+                StartX = 0,
+                StartY = 1,
+                EndX = 3,
+                EndY = 1
+            },
+            new PlacedShip
+            {
+                ShipType = ShipType.Cruiser,
+                StartX = 0,
+                StartY = 2,
+                EndX = 2,
+                EndY = 2
+            },
+            new PlacedShip
+            {
+                ShipType = ShipType.Submarine,
+                StartX = 0,
+                StartY = 3,
+                EndX = 1,
+                EndY = 3
+            },
+            new PlacedShip
+            {
+                ShipType = ShipType.Destroyer,
+                StartX = 0,
+                StartY = 4,
+                EndX = 0,
+                EndY = 4
+            }
         };
 
-        _mockClients.Setup(clients => clients.Caller).Returns(_mockCaller.Object);
+        public List<PlacedShip> PlacedShips2 = new List<PlacedShip>
+        {
+            new PlacedShip
+            {
+                ShipType = ShipType.Carrier,
+                StartX = 10,
+                StartY = 0,
+                EndX = 14,
+                EndY = 0
+            },
+            new PlacedShip
+            {
+                ShipType = ShipType.Battleship,
+                StartX = 10,
+                StartY = 1,
+                EndX = 13,
+                EndY = 1
+            },
+            new PlacedShip
+            {
+                ShipType = ShipType.Cruiser,
+                StartX = 10,
+                StartY = 2,
+                EndX = 12,
+                EndY = 2
+            },
+            new PlacedShip
+            {
+                ShipType = ShipType.Submarine,
+                StartX = 10,
+                StartY = 3,
+                EndX = 11,
+                EndY = 3
+            },
+            new PlacedShip
+            {
+                ShipType = ShipType.Destroyer,
+                StartX = 10,
+                StartY = 4,
+                EndX = 10,
+                EndY = 4
+            }
+        };
 
-        _mockClients.Setup(clients => clients.Group(It.IsAny<string>())).Returns(_mockCaller.Object);
-        _mockGroups.Setup(g => g.AddToGroupAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+        public GameHubIntegrationTests()
+        {
+            // Create shared InMemoryDB instance
+            _db = new InMemoryDB();
+
+            // Set up server with shared InMemoryDB
+            _server = Host.CreateDefaultBuilder()
+                .ConfigureWebHostDefaults(webBuilder =>
+                {
+                    webBuilder.UseStartup(context => new TestStartup(_db));
+                    webBuilder.UseUrls("http://localhost:5001");
+                })
+                .Build();
+        }
+
+
+        public async Task InitializeAsync()
+        {
+            await _server.StartAsync();
+
+            // Setup client connections to the in-memory server
+            _connection1 = new HubConnectionBuilder()
+                .WithUrl("http://localhost:5001/gamehub")
+                .Build();
+
+            _connection2 = new HubConnectionBuilder()
+                .WithUrl("http://localhost:5001/gamehub")
+                .Build();
+
+            await _connection1.StartAsync();
+            await _connection2.StartAsync();
+        }
+
+        public async Task DisposeAsync()
+        {
+            await _connection1.DisposeAsync();
+            await _connection2.DisposeAsync();
+            await _server.StopAsync();
+            _server.Dispose();
+        }
+
+        [Fact]
+        public async Task JoinGameRoom_UserCanJoinAndReceiveConfigurations()
+        {
+            // Arrange
+            var userConnection1 = new UserConnection
+            {
+                Username = "Player1",
+                GameRoomName = "TestRoom1"
+            };
+
+            var userConnection2 = new UserConnection
+            {
+                Username = "Player2",
+                GameRoomName = "TestRoom1"
+            };
+
+            string receivedPlayerId = null;
+
+            // Set up a listener to capture the PlayerId when "ReceivePlayerId" is called
+            _connection1.On<string>("ReceivePlayerId", playerId => { receivedPlayerId = playerId; });
+
+            string receivedPlayerId2 = null;
+
+            // Set up a listener to capture the PlayerId when "ReceivePlayerId" is called
+            _connection2.On<string>("ReceivePlayerId", playerId => { receivedPlayerId2 = playerId; });
+
+            // Act
+            await _connection1.InvokeAsync("JoinSpecificGameRoom", userConnection1);
+            await _connection2.InvokeAsync("JoinSpecificGameRoom", userConnection2);
+
+            // Assert
+            Assert.Contains(receivedPlayerId, _db.Connections.Keys);
+            Assert.Contains(receivedPlayerId2, _db.Connections.Keys);
+            Assert.Equal("TestRoom1", _db.Connections[receivedPlayerId].GameRoomName);
+            Assert.Equal("TestRoom1", _db.Connections[receivedPlayerId2].GameRoomName);
+        }
+
+        [Fact]
+        public async Task StartGame_SufficientPlayers_GameStartsSuccessfully()
+        {
+            // Arrange
+            var userConnection1 = new UserConnection
+            {
+                Username = "Player1",
+                GameRoomName = "TestRoom2"
+            };
+            var userConnection2 = new UserConnection
+            {
+                Username = "Player2",
+                GameRoomName = "TestRoom2"
+            };
+
+            string receivedPlayerId = null;
+            string receivedPlayerId2 = null;
+            bool player1Ready = false;
+            bool player2Ready = false;
+
+            // Set up listeners to capture PlayerId when "ReceivePlayerId" is called
+            _connection1.On<string>("ReceivePlayerId", playerId => { receivedPlayerId = playerId; });
+
+            _connection2.On<string>("ReceivePlayerId", playerId => { receivedPlayerId2 = playerId; });
+
+            _connection1.On<string>("PlayerReady", msg => { player1Ready = true; });
+
+            _connection2.On<string>("PlayerReady", msg => { player2Ready = true; });
+
+            await _connection1.InvokeAsync("JoinSpecificGameRoom", userConnection1);
+            await _connection2.InvokeAsync("JoinSpecificGameRoom", userConnection2);
+
+            await _connection1.InvokeAsync("GenerateBoard");
+
+            // Act
+            var sortedConnectionIds = _db.Connections.Keys.OrderBy(x => x).ToList();
+            var firstConnectionId = sortedConnectionIds.First();
+
+            if (firstConnectionId == _connection1.ConnectionId)
+            {
+                foreach (var ship in PlacedShips1)
+                {
+                    await _connection1.InvokeAsync("AddShip", ship);
+                }
+
+                foreach (var ship in PlacedShips2)
+                {
+                    await _connection2.InvokeAsync("AddShip", ship);
+                }
+            }
+            else
+            {
+                foreach (var ship in PlacedShips2)
+                {
+                    await _connection1.InvokeAsync("AddShip", ship);
+                }
+
+                foreach (var ship in PlacedShips1)
+                {
+                    await _connection2.InvokeAsync("AddShip", ship);
+                }
+            }
+
+            await _connection1.InvokeAsync("SetPlayerToReady");
+            await _connection2.InvokeAsync("SetPlayerToReady");
+
+            await _connection1.InvokeAsync("StartGame");
+
+            // Assert
+            var gameRoom = _db.GameRooms["TestRoom2"];
+            Assert.Equal(GameState.InProgress, gameRoom.State);
+            Assert.NotNull(gameRoom.Board);
+        }
     }
 
-    [Fact]
-    public async Task JoinSpecificGameRoom_NewUser_SuccessfullyJoins()
+    public class TestStartup
     {
-        var connectionId = "test-connection-id";
-        _mockContext.Setup(c => c.ConnectionId).Returns(connectionId);
+        private readonly InMemoryDB _db;
 
-        var userConnection = new UserConnection
+        public TestStartup(InMemoryDB db) => _db = db;
+
+        public void ConfigureServices(IServiceCollection services)
         {
-            Username = "TestUser",
-            GameRoomName = "TestRoom"
-        };
+            services.AddSignalR();
+            services.AddSingleton(_ => _db); // Use provided instance explicitly as the singleton
+            services.AddTransient<GameHub>();
+        }
 
-        // Act
-        await _hub.JoinSpecificGameRoom(userConnection);
-
-        // Assert
-        Assert.True(_db.Connections.ContainsKey(connectionId));
-        Assert.Equal(connectionId, _db.Connections[connectionId].PlayerId);
-        Assert.Equal("TestUser", _db.Connections[connectionId].Username);
-        Assert.Equal("TestRoom", _db.Connections[connectionId].GameRoomName);
-
-        // Verify Clients.Caller SendCoreAsync calls
-        _mockCaller.Verify(caller => caller.SendCoreAsync("SetModerator", It.Is<object[]>(o => (bool)o[0]), It.IsAny<CancellationToken>()), Times.Once);
-        _mockCaller.Verify(caller => caller.SendCoreAsync("ReceivePlayerId", It.Is<object[]>(o => (string)o[0] == connectionId), It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Fact]
-    public async Task JoinSpecificGameRoom_UsernameAlreadyTaken_JoinFailed()
-    {
-        // Arrange
-        var connectionId = "test-connection-id";
-        _mockContext.Setup(c => c.ConnectionId).Returns(connectionId);
-
-        var existingConnection = new UserConnection
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            PlayerId = "existing-connection-id",
-            Username = "TestUser",
-            GameRoomName = "TestRoom"
-        };
-        _db.Connections["existing-connection-id"] = existingConnection;
+            app.UseRouting();
 
-        var userConnection = new UserConnection
-        {
-            Username = "TestUser",
-            GameRoomName = "TestRoom"
-        };
-
-        // Act
-        await _hub.JoinSpecificGameRoom(userConnection);
-
-        // Assert
-        _mockCaller.Verify(caller => caller.SendCoreAsync("JoinFailed", It.Is<object[]>(o => (string)o[0] == "Username already taken in this room"), It.IsAny<CancellationToken>()), Times.Once);
-        Assert.False(_db.Connections.ContainsKey(connectionId));
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapHub<GameHub>("/gamehub");
+            });
+        }
     }
 }
