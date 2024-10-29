@@ -1,19 +1,14 @@
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using BattleShipAPI.Enums;
 using BattleShipAPI.Hubs;
 using BattleShipAPI.Models;
 using BattleShipAPI.Repository;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Xunit;
 
-namespace BattleShipAPI.Tests.Integration
+namespace BattleShipAPI.Tests.Hubs
 {
     public class GameHubIntegrationTests : IAsyncLifetime
     {
@@ -112,10 +107,8 @@ namespace BattleShipAPI.Tests.Integration
 
         public GameHubIntegrationTests()
         {
-            // Create shared InMemoryDB instance
             _db = new InMemoryDB();
 
-            // Set up server with shared InMemoryDB
             _server = Host.CreateDefaultBuilder()
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
@@ -130,7 +123,6 @@ namespace BattleShipAPI.Tests.Integration
         {
             await _server.StartAsync();
 
-            // Setup client connections to the in-memory server
             _connection1 = new HubConnectionBuilder()
                 .WithUrl("http://localhost:5001/gamehub")
                 .Build();
@@ -154,7 +146,6 @@ namespace BattleShipAPI.Tests.Integration
         [Fact]
         public async Task JoinGameRoom_UserCanJoinAndReceiveConfigurations()
         {
-            // Arrange
             var userConnection1 = new UserConnection
             {
                 Username = "Player1",
@@ -169,19 +160,15 @@ namespace BattleShipAPI.Tests.Integration
 
             string receivedPlayerId = null;
 
-            // Set up a listener to capture the PlayerId when "ReceivePlayerId" is called
             _connection1.On<string>("ReceivePlayerId", playerId => { receivedPlayerId = playerId; });
 
             string receivedPlayerId2 = null;
 
-            // Set up a listener to capture the PlayerId when "ReceivePlayerId" is called
             _connection2.On<string>("ReceivePlayerId", playerId => { receivedPlayerId2 = playerId; });
 
-            // Act
             await _connection1.InvokeAsync("JoinSpecificGameRoom", userConnection1);
             await _connection2.InvokeAsync("JoinSpecificGameRoom", userConnection2);
 
-            // Assert
             Assert.Contains(receivedPlayerId, _db.Connections.Keys);
             Assert.Contains(receivedPlayerId2, _db.Connections.Keys);
             Assert.Equal("TestRoom1", _db.Connections[receivedPlayerId].GameRoomName);
@@ -191,7 +178,6 @@ namespace BattleShipAPI.Tests.Integration
         [Fact]
         public async Task StartGame_SufficientPlayers_GameStartsSuccessfully()
         {
-            // Arrange
             var userConnection1 = new UserConnection
             {
                 Username = "Player1",
@@ -208,7 +194,6 @@ namespace BattleShipAPI.Tests.Integration
             bool player1Ready = false;
             bool player2Ready = false;
 
-            // Set up listeners to capture PlayerId when "ReceivePlayerId" is called
             _connection1.On<string>("ReceivePlayerId", playerId => { receivedPlayerId = playerId; });
 
             _connection2.On<string>("ReceivePlayerId", playerId => { receivedPlayerId2 = playerId; });
@@ -222,7 +207,6 @@ namespace BattleShipAPI.Tests.Integration
 
             await _connection1.InvokeAsync("GenerateBoard");
 
-            // Act
             var sortedConnectionIds = _db.Connections.Keys.OrderBy(x => x).ToList();
             var firstConnectionId = sortedConnectionIds.First();
 
@@ -256,7 +240,6 @@ namespace BattleShipAPI.Tests.Integration
 
             await _connection1.InvokeAsync("StartGame");
 
-            // Assert
             var gameRoom = _db.GameRooms["TestRoom2"];
             Assert.Equal(GameState.InProgress, gameRoom.State);
             Assert.NotNull(gameRoom.Board);
@@ -272,7 +255,7 @@ namespace BattleShipAPI.Tests.Integration
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddSignalR();
-            services.AddSingleton(_ => _db); // Use provided instance explicitly as the singleton
+            services.AddSingleton(_ => _db);
             services.AddTransient<GameHub>();
         }
 

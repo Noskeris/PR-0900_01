@@ -7,6 +7,6 @@ namespace BattleShipAPI.Repository
     {
         public ConcurrentDictionary<string, UserConnection> Connections { get; } = new();
         
-        public ConcurrentDictionary<string, GameRoom> GameRooms { get; } = new();
+        public ConcurrentDictionary<string, GameRoom?> GameRooms { get; } = new();
     }
 }

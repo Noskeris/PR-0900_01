@@ -131,20 +131,6 @@ namespace BattleShipAPI.Hubs
             }
         }
 
-        public async Task SetGameRoomSettings(GameRoomSettings roomSettings)
-        {
-            if (_db.Connections.TryGetValue(Context.ConnectionId, out var connection)
-                && _db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom)
-                && gameRoom.State == GameState.NotStarted
-                && connection.IsModerator)
-            {
-                gameRoom.Settings = roomSettings;
-                _db.GameRooms[connection.GameRoomName] = gameRoom;
-
-                await Clients.Caller.SendAsync("GameSettingsSaved", "Game settings saved successfully.");
-            }
-        }
-
         public async Task AddShip(PlacedShip placedShip)
         {
             if (_db.Connections.TryGetValue(Context.ConnectionId, out var connection)
