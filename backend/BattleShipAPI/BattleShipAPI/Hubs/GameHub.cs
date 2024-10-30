@@ -1,4 +1,5 @@
-﻿using BattleShipAPI.AttackStrategy;
+﻿using BattleShipAPI.Adapter.Logs;
+using BattleShipAPI.AttackStrategy;
 using BattleShipAPI.Enums;
 using BattleShipAPI.Factories;
 using BattleShipAPI.Helpers;
@@ -10,7 +11,6 @@ using Microsoft.AspNetCore.SignalR;
 //TODO add ship shield logic
 //TODO add ship mobility logic
 //TODO DESIGN PATTERN decorator
-//TODO DESIGN PATTERN adapter
 //TODO DESIGN PATTERN facade
 //TODO DESIGN PATTERN bridge
 
@@ -20,12 +20,16 @@ namespace BattleShipAPI.Hubs
     {
         private readonly InMemoryDB _db;
         private readonly INotificationService _notificationService;
+        private readonly ILoggerInterface _loggerOnReceive;
+        private readonly ILoggerInterface _loggerOnSend;
         private readonly Dictionary<string, IPlayerCommand> _commands = new();
 
-        public GameHub(INotificationService notificationService)
+        public GameHub(INotificationService notificationService, ConsoleLoggerAdapter loggerOnReceive, FileLoggerAdapter loggerOnSend)
         {
             _db = InMemoryDB.Instance;
             _notificationService = notificationService;
+            _loggerOnReceive = loggerOnReceive;
+            _loggerOnSend = loggerOnSend;
             InitializeCommands();
         }
 
@@ -42,6 +46,11 @@ namespace BattleShipAPI.Hubs
 
         public async Task JoinSpecificGameRoom(UserConnection connection)
         {
+            _loggerOnReceive.WriteLog(new LogEntry
+            {
+                Message = $"Received JoinSpecificGameRoom request from {connection.Username}",
+            });
+
             if (_db.Connections.Values.Any(c =>
                     c.GameRoomName == connection.GameRoomName && c.Username == connection.Username))
             {
@@ -50,7 +59,12 @@ namespace BattleShipAPI.Hubs
                     Context.ConnectionId,
                     "JoinFailed",
                     "Username already taken in this room");
-                
+
+                _loggerOnSend.WriteLog(new LogEntry
+                {
+                    Message = $"Sent JoinFailed to {connection.Username}",
+                });
+
                 return;
             }
 
@@ -62,7 +76,12 @@ namespace BattleShipAPI.Hubs
                     Context.ConnectionId,
                     "JoinFailed",
                     "Game has already started");
-                
+
+                _loggerOnSend.WriteLog(new LogEntry
+                {
+                    Message = $"Sent JoinFailed to {connection.Username}",
+                });
+
                 return;
             }
 
@@ -75,6 +94,11 @@ namespace BattleShipAPI.Hubs
                     Context.ConnectionId,
                     "JoinFailed",
                     "Game room is full.");
+
+                _loggerOnSend.WriteLog(new LogEntry
+                {
+                    Message = $"Sent JoinFailed to {connection.Username}",
+                });
 
                 return;
             }
@@ -100,12 +124,22 @@ namespace BattleShipAPI.Hubs
                 Context.ConnectionId,
                 "SetModerator",
                 connection.IsModerator);
-            
+
+            _loggerOnSend.WriteLog(new LogEntry
+            {
+                Message = $"Sent SetModerator to {connection.Username}",
+            });
+
             await _notificationService.NotifyClient(
                 Clients,
                 Context.ConnectionId,
                 "ReceivePlayerId",
                 connection.PlayerId);
+
+            _loggerOnSend.WriteLog(new LogEntry
+            {
+                Message = $"Sent ReceivePlayerId to {connection.Username}",
+            });
 
             await _notificationService.NotifyGroup(
                 Clients,
@@ -113,10 +147,19 @@ namespace BattleShipAPI.Hubs
                 "JoinSpecificGameRoom",
                 "admin",
                 $"{connection.Username} has joined the game room {connection.GameRoomName}");
+
+            _loggerOnSend.WriteLog(new LogEntry
+            {
+                Message = $"Sent JoinSpecificGameRoom to {connection.Username}",
+            });
         }
 
         public async Task ConfirmGameMode(GameMode gameMode)
         {
+            _loggerOnReceive.WriteLog(new LogEntry
+            {
+                Message = $"Received ConfirmGameMode request from {Context.ConnectionId}",
+            });
             if (_db.Connections.TryGetValue(Context.ConnectionId, out var connection)
                 && _db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom)
                 && gameRoom.State == GameState.NotStarted)
@@ -133,6 +176,11 @@ namespace BattleShipAPI.Hubs
                     gameRoom.Name,
                     "GameStateChanged",
                     (int)gameRoom.State);
+
+                _loggerOnSend.WriteLog(new LogEntry
+                {
+                    Message = $"Sent GameStateChanged to {gameRoom.Name}",
+                });
             }
         }
 
@@ -252,6 +300,10 @@ namespace BattleShipAPI.Hubs
 
         public async Task SetPlayerToReady()
         {
+            _loggerOnReceive.WriteLog(new LogEntry
+            {
+                Message = $"Received SetPlayerToReady request from {Context.ConnectionId}",
+            });
             if (_db.Connections.TryGetValue(Context.ConnectionId, out var connection)
                 && _db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom)
                 && gameRoom.State == GameState.PlacingShips)
@@ -264,6 +316,11 @@ namespace BattleShipAPI.Hubs
                         "PlayerNotReady",
                         "You have not placed all your ships.");
                     
+                    _loggerOnSend.WriteLog(new LogEntry
+                    {
+                        Message = $"Sent PlayerNotReady to {connection.Username}",
+                    });
+
                     return;
                 }
 
@@ -274,7 +331,12 @@ namespace BattleShipAPI.Hubs
                     Clients,
                     Context.ConnectionId,
                     "PlayerIsReady",
-                    "You are ready to start the game."); 
+                    "You are ready to start the game.");
+
+                _loggerOnSend.WriteLog(new LogEntry
+                {
+                    Message = $"Sent PlayerIsReady to {connection.Username}",
+                });
             }
         }
 
