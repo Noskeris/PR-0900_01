@@ -11,7 +11,6 @@ using Microsoft.AspNetCore.SignalR;
 //TODO add ship shield logic
 //TODO add ship mobility logic
 //TODO DESIGN PATTERN decorator
-//TODO DESIGN PATTERN adapter
 //TODO DESIGN PATTERN facade
 //TODO DESIGN PATTERN bridge
 
