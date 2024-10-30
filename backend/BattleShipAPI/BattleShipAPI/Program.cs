@@ -1,3 +1,4 @@
+using BattleShipAPI.Adapter.Logs;
 using BattleShipAPI.Hubs;
 using BattleShipAPI.Notifications;
 
@@ -27,6 +28,9 @@ namespace BattleShipAPI
                     .AllowCredentials();
                 });
             });
+
+            builder.Services.AddSingleton<ConsoleLoggerAdapter>();
+            builder.Services.AddSingleton<FileLoggerAdapter>(provider => new FileLoggerAdapter("GameHub_logs.txt"));
 
             builder.Services.AddSingleton<INotificationService, NotificationService>();
 
