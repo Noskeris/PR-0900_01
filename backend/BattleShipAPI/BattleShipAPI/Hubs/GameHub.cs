@@ -809,11 +809,10 @@ namespace BattleShipAPI.Hubs
             }
         }
 
-public async Task NotifyClient(string method, params object[] args)
-{
-    await _notificationService.NotifyClient(Clients, Context.ConnectionId, method, args);
-}
-
+        public async Task NotifyClient(string method, params object[] args)
+        {
+            await _notificationService.NotifyClient(Clients, Context.ConnectionId, method, args);
+        }
 
         public async Task NotifyGroup(string groupName, string method, params object[] args)
         {
