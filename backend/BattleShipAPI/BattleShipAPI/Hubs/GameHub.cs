@@ -22,6 +22,7 @@ namespace BattleShipAPI.Hubs
         private readonly INotificationService _notificationService;
         private readonly ILoggerInterface _loggerOnReceive;
         private readonly ILoggerInterface _loggerOnSend;
+        private readonly Dictionary<string, IPlayerCommand> _commands = new();
 
         public GameHub(INotificationService notificationService, ConsoleLoggerAdapter loggerOnReceive, FileLoggerAdapter loggerOnSend)
         {
@@ -29,6 +30,18 @@ namespace BattleShipAPI.Hubs
             _notificationService = notificationService;
             _loggerOnReceive = loggerOnReceive;
             _loggerOnSend = loggerOnSend;
+            InitializeCommands();
+        }
+
+        private void InitializeCommands()
+        {
+            _commands["ready"] = new ReadyCommand();
+            _commands["start"] = new StartGameCommand();
+            _commands["gamemode"] = new ConfirmGameModeCommand();
+            _commands["generateboard"] = new GenerateBoardCommand();
+            _commands["addship"] = new AddShipCommand();
+            _commands["undoplacement"] = new UndoPlacementCommand();
+            _commands["redoplacement"] = new RedoPlacementCommand();
         }
 
         public async Task JoinSpecificGameRoom(UserConnection connection)
@@ -796,99 +809,26 @@ namespace BattleShipAPI.Hubs
 
         public async Task HandlePlayerCommand(string command)
         {
-            if (_db.Connections.TryGetValue(Context.ConnectionId, out var connection)
-                && _db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom)
-                && (gameRoom.State == GameState.NotStarted || gameRoom.State == GameState.GameModeConfirmed 
-                || gameRoom.State == GameState.PlacingShips))
+            var commandParts = command.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (commandParts.Length == 0)
             {
-                var commandParts = command.Split(' ');
-                var action = commandParts[0].ToLower();
-                switch (action)
-                {
-                    case "ready":
-                        await SetPlayerToReady();
-                        break;
-                    case "start":
-                        await StartGame();
-                        break;
-                    case "gamemode":
-                        if (Enum.TryParse<GameMode>(commandParts[1], true, out var gameMode))
-                        {
-                            await ConfirmGameMode(gameMode);
-                        }
-                        break;
-                    case "generateboard":
-                        await GenerateBoard(gameRoom.Mode);
-                        break;
-                    case "addship":
-                        if (commandParts.Length >= 5 &&
-                            Enum.TryParse<ShipType>(commandParts[1], true, out var shipType) &&
-                            int.TryParse(commandParts[2], out var startX) &&
-                            int.TryParse(commandParts[3], out var startY) &&
-                            Enum.TryParse<ShipOrientation>(commandParts[4], true, out var shipOrientation))
-                        {
-                            int endX = startX;
-                            int endY = startY;
+                await NotifyClient("UnknownCommand", "No command provided.");
+                return;
+            }
 
-                            var shipConfig = gameRoom.ShipsConfig.FirstOrDefault(config => config.ShipType == shipType);
+            var action = commandParts[0].ToLower();
 
-                            if (shipConfig == null)
-                            {
-                                await _notificationService.NotifyClient(
-                                Clients,
-                                Context.ConnectionId,
-                                "FailedToAddShip",
-                                "No available ships in config.");
-                            }
-
-                            int shipSize = shipConfig!.Size;
-
-                            if (shipOrientation == ShipOrientation.Horizontal)
-                            {
-                                endX = startX + shipSize - 1;
-                            }
-                            else if (shipOrientation == ShipOrientation.Vertical)
-                            {
-                                endY = startY + shipSize - 1;
-                            }
-
-                            var placedShip = new PlacedShip
-                            {
-                                ShipType = shipType,
-                                StartX = startX,
-                                StartY = startY,
-                                EndX = endX,
-                                EndY = endY
-                            };
-
-                            await AddShip(placedShip);
-                        }
-                        else
-                        {
-                            await _notificationService.NotifyClient(
-                                Clients,
-                                Context.ConnectionId,
-                                "FailedToAddShip",
-                                "Invalid command format for adding a ship.");
-                        }
-                        break;
-                    case "undoplacement":
-                        await UndoShipPlacement();
-                        break;
-                    case "redoplacement":
-                        await RedoShipPlacement();
-                        break;
-
-                    default:
-                        await _notificationService.NotifyClient(
-                            Clients,
-                            Context.ConnectionId,
-                            "UnknownCommand",
-                            $"Unknown command: {command}");
-                        break;
-                }
+            if (_commands.TryGetValue(action, out var playerCommand))
+            {
+                var context = new CommandContext(this);
+                await playerCommand.Execute(context, commandParts);
+            }
+            else
+            {
+                await NotifyClient("UnknownCommand", $"Unknown command: {command}");
             }
         }
+
 
         private async Task RestartGame(UserConnection connection)
         {
@@ -930,5 +870,16 @@ namespace BattleShipAPI.Hubs
                     gameRoom.ShipsConfig);
             }
         }
+
+        public async Task NotifyClient(string method, params object[] args)
+        {
+            await _notificationService.NotifyClient(Clients, Context.ConnectionId, method, args);
+        }
+
+        public async Task NotifyGroup(string groupName, string method, params object[] args)
+        {
+            await _notificationService.NotifyGroup(Clients, groupName, method, args);
+        }
+
     }
 }

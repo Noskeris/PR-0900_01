@@ -35,7 +35,6 @@ public class NotificationService : INotificationService
         );
 
         await Task.WhenAll(tasks);
-
     }
     
     public async Task NotifyClient(IHubCallerClients clients, string clientId, string key, params object?[] values)
