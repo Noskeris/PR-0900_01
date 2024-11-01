@@ -19,6 +19,7 @@ export const App = () => {
   const [shipsToPlace, setShipsToPlace] = useState();
   const [playerTurn, setPlayerTurn] = useState();
   const [playerAvatarConfigs, setPlayerAvatarConfigs] = useState();
+  const [allAvatars, setAllAvatars] = useState();
 
   const [turnEndTime, setTurnEndTime] = useState(null);
   const [timer, setTimer] = useState(0);
@@ -60,6 +61,10 @@ export const App = () => {
 
       newConnection.on("SetPlayerAvatarConfigs", (playerAvatarConfigs) => {
         setPlayerAvatarConfigs(playerAvatarConfigs);
+      });
+
+      newConnection.on("AllAvatars", (allAvatars) => {
+        setAllAvatars(allAvatars);
       });
 
       newConnection.on("GameStateChanged", (newGameState) => {
@@ -300,6 +305,7 @@ export const App = () => {
           sendCommand={sendCommand}
           playerAvatarConfigs={playerAvatarConfigs}
           changeAvatar={changeAvatar}
+          allAvatars={allAvatars}
         />
       )}
     </>

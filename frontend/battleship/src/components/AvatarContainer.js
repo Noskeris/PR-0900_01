@@ -16,7 +16,7 @@ const AvatarContainer = ({ config, changeAvatar }) => {
     }, [headType, appearance]);
     
   return (
-    <Paper elevation={2} sx={{ p: 2, maxHeight: 450, overflowY: "auto" }}>
+    <Paper elevation={2} sx={{ p: 2, maxHeight: 500, overflowY: "auto" }}>
       <Typography variant="h5" align="center" gutterBottom>
         Build your avatar
       </Typography>

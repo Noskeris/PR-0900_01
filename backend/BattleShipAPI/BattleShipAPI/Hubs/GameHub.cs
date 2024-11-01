@@ -416,7 +416,7 @@ namespace BattleShipAPI.Hubs
                     (int)gameRoom.State);
 
                 var playerAvatars = players
-                    .Select(x => new AvatarResponse(x.PlayerId, x.Avatar.GetAvatarParameters()))
+                    .Select(x => new AvatarResponse(x.Username, x.Avatar.GetAvatarParameters()))
                     .ToList();
                 
                 await _notificationService.NotifyGroup(Clients, gameRoom.Name, "AllAvatars", playerAvatars);

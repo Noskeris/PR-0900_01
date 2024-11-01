@@ -43,7 +43,8 @@ const GameRoom = ({
   confirmGameMode,
   sendCommand,
   playerAvatarConfigs,
-  changeAvatar
+  changeAvatar,
+  allAvatars
 }) => {
   const [currentlyPlacing, setCurrentlyPlacing] = useState(null);
   const [availableShips, setAvailableShips] = useState(shipsToPlace);
@@ -254,9 +255,9 @@ const GameRoom = ({
               </>
             )}
 
-            {gameState === 3 && (
+            {(gameState === 3 || gameState === 4) && (
               <>
-              {playerAvatarConfigs && <AllAvatarsContainer config={playerAvatarConfigs} changeAvatar={changeAvatar} />}
+              {allAvatars && <AllAvatarsContainer avatars={allAvatars} />}
               </>
             )}
 
