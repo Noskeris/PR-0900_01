@@ -23,7 +23,11 @@ const AllAvatarsContainer = ({ avatars }) => {
             <>
               <AvatarComponent key={index} config={avatar.avatar} />
               <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-                <Typography variant="body1" align="center" gutterBottom>
+                <Typography 
+                  variant="body1" 
+                  align="center" 
+                  gutterBottom 
+                  style={{ textDecoration: avatar.canPlay === false ? 'line-through' : 'none' }}>
                   {avatar.nickname}
                 </Typography>
               </div>
