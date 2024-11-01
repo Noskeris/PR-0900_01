@@ -225,17 +225,16 @@ namespace BattleShipAPI.Hubs
             }
         }
 
-        public async Task AddShip(PlacedShip placedShip)
+        public async Task AddShip(PlacedShip placedShipData)
         {
             if (_db.Connections.TryGetValue(Context.ConnectionId, out var connection)
                 && _db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom)
                 && gameRoom.State == GameState.PlacingShips)
             {
-
                 var board = gameRoom.Board;
                 var player = _db.Connections[Context.ConnectionId];
                 var shipConfig = gameRoom.ShipsConfig
-                    .FirstOrDefault(x => x.ShipType == placedShip.ShipType);
+                    .FirstOrDefault(x => x.ShipType == placedShipData.ShipType);
 
                 if (shipConfig == null)
                 {
@@ -244,40 +243,42 @@ namespace BattleShipAPI.Hubs
                         Context.ConnectionId,
                         "FailedToAddShip",
                         "This ship is not part of the game.");
-                    
+
                     return;
                 }
 
-                if (player.PlacedShips.Count(x => x.ShipType == placedShip.ShipType) == shipConfig.Count)
+                if (player.PlacedShips.Count(x => x.ShipType == placedShipData.ShipType) >= shipConfig.Count)
                 {
                     await _notificationService.NotifyClient(
                         Clients,
                         Context.ConnectionId,
                         "FailedToAddShip",
                         "No ships of this type left.");
-                    
+
                     return;
                 }
 
-                player.PlacingActionHistory.AddInitialState(player.PlacedShips, gameRoom.Board);
+                // Create the ship using ShipConfig
+                IPlacedShip newShip = shipConfig.CreateShip(
+                    placedShipData.StartX,
+                    placedShipData.StartY,
+                    placedShipData.EndX,
+                    placedShipData.EndY,
+                    revealShipAction: ship => RevealShip(ship, gameRoom));
 
-                if (!board.TryPutShipOnBoard(
-                        placedShip.StartX,
-                        placedShip.StartY,
-                        placedShip.EndX,
-                        placedShip.EndY,
-                        player.PlayerId))
+                // Validate and place the ship on the board
+                if (!board.TryPutShipOnBoard(newShip, player.PlayerId))
                 {
                     await _notificationService.NotifyClient(
                         Clients,
                         Context.ConnectionId,
                         "FailedToAddShip",
                         "Failed to add ship to board. Please try again.");
-                    
+
                     return;
                 }
 
-                player.PlacedShips.Add(placedShip);
+                player.PlacedShips.Add(newShip);
                 player.PlacingActionHistory.AddAction(player.PlacedShips, gameRoom.Board);
 
                 _db.GameRooms[gameRoom.Name] = gameRoom;
@@ -288,7 +289,7 @@ namespace BattleShipAPI.Hubs
                     Context.ConnectionId,
                     "UpdatedShipsConfig",
                     player.GetAllowedShipsConfig(gameRoom.ShipsConfig));
-                
+
                 await _notificationService.NotifyGroup(
                     Clients,
                     gameRoom.Name,
@@ -298,6 +299,22 @@ namespace BattleShipAPI.Hubs
             }
         }
 
+        private void RevealShip(IPlacedShip ship, GameRoom gameRoom)
+        {
+            var coordinates = ship.GetCoordinates();
+            foreach (var (x, y) in coordinates)
+            {
+                gameRoom.Board.Cells[x][y].IsRevealed = true;
+            }
+
+            // Notify clients about the update
+            _notificationService.NotifyGroup(
+                Clients,
+                gameRoom.Name,
+                "BoardUpdated",
+                gameRoom.Name,
+                gameRoom.Board);
+        }
         public async Task SetPlayerToReady()
         {
             _loggerOnReceive.WriteLog(new LogEntry
@@ -503,68 +520,81 @@ namespace BattleShipAPI.Hubs
             }
         }
 
+        // In GameHub.cs
         private async Task AttackCellByOne(int x, int y, List<UserConnection> players, GameRoom gameRoom, UserConnection connection)
         {
             var cell = gameRoom.Board.Cells[x][y];
 
             if (cell.State == CellState.HasShip)
             {
-                var cellOwner = players.First(p => p.PlayerId == cell.OwnerId);
+                var shipOwner = players.FirstOrDefault(p => p.PlacedShips.Any(ship => ship.GetCoordinates().Contains((x, y))));
 
-                if (!gameRoom.TryFullySinkShip(x, y, cellOwner))
+                if (shipOwner != null)
                 {
-                    await _notificationService.NotifyGroup(
-                        Clients,
-                        gameRoom.Name,
-                        "AttackResult",
-                        $"{connection.Username} hit the ship!");
-                }
-                else
-                {
-                    await _notificationService.NotifyGroup(
-                        Clients,
-                        gameRoom.Name,
-                        "AttackResult",
-                        $"{connection.Username} sunk the ship!");
+                    var ship = shipOwner.PlacedShips.First(ship => ship.GetCoordinates().Contains((x, y)));
 
-                    if (!gameRoom.HasAliveShips(cellOwner))
+                    ship.Hit(x, y);
+
+                    // Update the cell state
+                    cell.State = CellState.DamagedShip;
+
+                    if (ship.IsSunk)
                     {
-                        cellOwner.CanPlay = false;
-                        _db.Connections[cellOwner.PlayerId] = cellOwner;
+                        // Update all ship cells to SunkenShip
+                        foreach (var (shipX, shipY) in ship.GetCoordinates())
+                        {
+                            gameRoom.Board.Cells[shipX][shipY].State = CellState.SunkenShip;
+                        }
 
                         await _notificationService.NotifyGroup(
                             Clients,
                             gameRoom.Name,
-                            "GameLostResult",
-                            $"{cellOwner.Username}",
-                            "lost the game!");
+                            "AttackResult",
+                            $"{connection.Username} sunk {shipOwner.Username}'s {ship.ShipType}!");
+
+                        if (shipOwner.PlacedShips.All(s => s.IsSunk))
+                        {
+                            shipOwner.CanPlay = false;
+                            _db.Connections[shipOwner.PlayerId] = shipOwner;
+
+                            await _notificationService.NotifyGroup(
+                                Clients,
+                                gameRoom.Name,
+                                "GameLostResult",
+                                $"{shipOwner.Username} has lost all their ships!");
+                        }
+
+                        if (players.Where(p => p.PlayerId != connection.PlayerId).All(p => !p.CanPlay))
+                        {
+                            gameRoom.State = GameState.Finished;
+
+                            await _notificationService.NotifyGroup(
+                                Clients,
+                                gameRoom.Name,
+                                "WinnerResult",
+                                $"{connection.Username} won the game!");
+
+                            await _notificationService.NotifyGroup(
+                                Clients,
+                                gameRoom.Name,
+                                "GameStateChanged",
+                                (int)gameRoom.State);
+                        }
                     }
-
-                    if (players
-                        .Where(p => p.PlayerId != connection.PlayerId)
-                        .All(p => !p.CanPlay))
+                    else
                     {
-                        gameRoom.State = GameState.Finished;
-                        
                         await _notificationService.NotifyGroup(
                             Clients,
                             gameRoom.Name,
-                            "WinnerResult",
-                            $"{connection.Username}",
-                            "won the game!");
-                        
-                        await _notificationService.NotifyGroup(
-                            Clients,
-                            gameRoom.Name,
-                            "GameStateChanged",
-                            (int)gameRoom.State);
+                            "AttackResult",
+                            $"{connection.Username} hit {shipOwner.Username}'s {ship.ShipType}!");
                     }
                 }
             }
             else
             {
                 cell.State = CellState.Missed;
-                
+
                 await _notificationService.NotifyGroup(
                     Clients,
                     gameRoom.Name,
@@ -572,6 +602,7 @@ namespace BattleShipAPI.Hubs
                     $"{connection.Username} missed!");
             }
         }
+
 
         public override async Task OnDisconnectedAsync(Exception exception)
         {

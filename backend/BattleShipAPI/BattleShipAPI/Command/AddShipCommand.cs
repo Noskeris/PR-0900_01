@@ -1,5 +1,8 @@
 ﻿using BattleShipAPI.Enums;
 using BattleShipAPI.Models;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 public class AddShipCommand : IPlayerCommand
 {
@@ -39,20 +42,19 @@ public class AddShipCommand : IPlayerCommand
                     endY = startY + shipSize - 1;
                 }
 
-                var placedShip = new PlacedShip
-                {
-                    ShipType = shipType,
-                    StartX = startX,
-                    StartY = startY,
-                    EndX = endX,
-                    EndY = endY
-                };
+                // Create the ship using ShipConfig.CreateShip, applying decorators if needed
+                IPlacedShip newShip = shipConfig.CreateShip(
+                    startX,
+                    startY,
+                    endX,
+                    endY,
+                    revealShipAction: ship => RevealShipAsync(ship, gameRoom, context));
 
                 // Implement the logic of adding a ship
                 var board = gameRoom.Board;
                 var player = context.Db.Connections[context.ConnectionId];
 
-                if (player.PlacedShips.Count(x => x.ShipType == placedShip.ShipType) == shipConfig.Count)
+                if (player.PlacedShips.Count(x => x.ShipType == newShip.ShipType) >= shipConfig.Count)
                 {
                     await context.Hub.NotifyClient(
                         "FailedToAddShip",
@@ -63,12 +65,7 @@ public class AddShipCommand : IPlayerCommand
 
                 player.PlacingActionHistory.AddInitialState(player.PlacedShips, gameRoom.Board);
 
-                if (!board.TryPutShipOnBoard(
-                        placedShip.StartX,
-                        placedShip.StartY,
-                        placedShip.EndX,
-                        placedShip.EndY,
-                        player.PlayerId))
+                if (!board.TryPutShipOnBoard(newShip, player.PlayerId))
                 {
                     await context.Hub.NotifyClient(
                         "FailedToAddShip",
@@ -77,7 +74,7 @@ public class AddShipCommand : IPlayerCommand
                     return;
                 }
 
-                player.PlacedShips.Add(placedShip);
+                player.PlacedShips.Add(newShip);
                 player.PlacingActionHistory.AddAction(player.PlacedShips, gameRoom.Board);
 
                 context.Db.GameRooms[gameRoom.Name] = gameRoom;
@@ -100,5 +97,22 @@ public class AddShipCommand : IPlayerCommand
                 "FailedToAddShip",
                 "Invalid command format for adding a ship.");
         }
+    }
+
+    // Helper method to reveal the ship asynchronously
+    private async Task RevealShipAsync(IPlacedShip ship, GameRoom gameRoom, CommandContext context)
+    {
+        var coordinates = ship.GetCoordinates();
+        foreach (var (x, y) in coordinates)
+        {
+            gameRoom.Board.Cells[x][y].IsRevealed = true;
+        }
+
+        // Notify clients about the update
+        await context.Hub.NotifyGroup(
+            gameRoom.Name,
+            "BoardUpdated",
+            gameRoom.Name,
+            gameRoom.Board);
     }
 }

@@ -4,11 +4,11 @@ namespace BattleShipAPI.Models
 {
     public class PlacingActionHistory
     {
-        private List<(List<PlacedShip> PlacedShips, Board BoardState)> _history = new List<(List<PlacedShip> PlacedShips, Board BoardState)>();
+        private List<(List<IPlacedShip> PlacedShips, Board BoardState)> _history = new List<(List<IPlacedShip> PlacedShips, Board BoardState)>();
 
         private int _currentPointer = -1;
 
-        public void AddInitialState(List<PlacedShip> placedShips, Board board)
+        public void AddInitialState(List<IPlacedShip> placedShips, Board board)
         {
             if ( _history.Count > 0)
             {
@@ -17,12 +17,12 @@ namespace BattleShipAPI.Models
 
             var boardClone = board.Clone();
 
-            _history.Add((new List<PlacedShip>(placedShips), boardClone));
+            _history.Add((new List<IPlacedShip>(placedShips), boardClone));
 
             _currentPointer++;
         }
 
-        public void AddAction(List<PlacedShip> placedShips, Board board)
+        public void AddAction(List<IPlacedShip> placedShips, Board board)
         {
             if (_currentPointer < _history.Count - 1)
             {
@@ -31,7 +31,7 @@ namespace BattleShipAPI.Models
 
             var boardClone = board.Clone();
 
-            _history.Add((new List<PlacedShip>(placedShips), boardClone));
+            _history.Add((new List<IPlacedShip>(placedShips), boardClone));
 
             _currentPointer++;
         }
@@ -40,7 +40,7 @@ namespace BattleShipAPI.Models
 
         public bool CanRedo() => _currentPointer < _history.Count - 1;
 
-        public (List<PlacedShip> PlacedShips, Board BoardState)? Undo()
+        public (List<IPlacedShip> PlacedShips, Board BoardState)? Undo()
         {
             if (!CanUndo())
             {
@@ -51,7 +51,7 @@ namespace BattleShipAPI.Models
             return _history[_currentPointer];
         }
 
-        public (List<PlacedShip> PlacedShips, Board BoardState)? Redo()
+        public (List<IPlacedShip> PlacedShips, Board BoardState)? Redo()
         {
             if (!CanRedo())
             {
