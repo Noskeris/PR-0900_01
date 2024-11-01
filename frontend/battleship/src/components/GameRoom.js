@@ -7,6 +7,7 @@ import {
   Paper,
   Divider,
   Stack,
+  Avatar,
 } from "@mui/material";
 import MessageContainer from "./MessageContainer";
 import BoardComponent from "./BoardComponent";
@@ -14,6 +15,7 @@ import { PlayerFleet } from "./PlayerFleet";
 import SuperAttackSelector from "./SuperAttackSelector";
 import GameModeSelector from "./GameModeSelector";
 import CommandInput from "./ComamndInput";
+import AvatarContainer from "./AvatarContainer";
 
 const GameRoom = ({
   messages,
@@ -38,7 +40,9 @@ const GameRoom = ({
   superAttacks,
   isPlayerReady,
   confirmGameMode,
-  sendCommand
+  sendCommand,
+  playerAvatarConfigs,
+  changeAvatar
 }) => {
   const [currentlyPlacing, setCurrentlyPlacing] = useState(null);
   const [availableShips, setAvailableShips] = useState(shipsToPlace);
@@ -105,6 +109,7 @@ const GameRoom = ({
       });
     }
   };
+
 
   return (
     <>
@@ -231,6 +236,7 @@ const GameRoom = ({
 
             {/* PlayerFleet Box */}
             {gameState === 2 && (
+              <>
               <Paper elevation={3} sx={{ p: 2 }}>
                 <Typography variant="h6" align="center" gutterBottom>
                   Place your ships
@@ -243,6 +249,8 @@ const GameRoom = ({
                   isPlayerReady={isPlayerReady}
                 />
               </Paper>
+              {playerAvatarConfigs && <AvatarContainer config={playerAvatarConfigs} changeAvatar={changeAvatar} />}
+              </>
             )}
 
             {/* Messages Box */}

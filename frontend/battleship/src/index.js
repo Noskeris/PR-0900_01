@@ -18,6 +18,7 @@ export const App = () => {
   const [gameState, setGameState] = useState(1);
   const [shipsToPlace, setShipsToPlace] = useState();
   const [playerTurn, setPlayerTurn] = useState();
+  const [playerAvatarConfigs, setPlayerAvatarConfigs] = useState();
 
   const [turnEndTime, setTurnEndTime] = useState(null);
   const [timer, setTimer] = useState(0);
@@ -55,6 +56,10 @@ export const App = () => {
 
       newConnection.on("ReceivePlayerId", (playerId) => {
         setPlayerId(playerId);
+      });
+
+      newConnection.on("SetPlayerAvatarConfigs", (playerAvatarConfigs) => {
+        setPlayerAvatarConfigs(playerAvatarConfigs);
       });
 
       newConnection.on("GameStateChanged", (newGameState) => {
@@ -253,6 +258,15 @@ export const App = () => {
     }
   }
 
+  const changeAvatar = async (avatar) => {
+    try {
+      await connection.invoke("ChangeAvatar", avatar.headType, avatar.appearance);
+      console.log("ChangeAvatar invoked");
+    } catch (error) {
+      console.log("Error ChangeAvatar", avatar.headType, avatar.appearance);
+    }
+  }
+
 
   return (
     <>
@@ -284,6 +298,8 @@ export const App = () => {
           isPlayerReady={isPlayerReady}
           confirmGameMode={confirmGameMode}
           sendCommand={sendCommand}
+          playerAvatarConfigs={playerAvatarConfigs}
+          changeAvatar={changeAvatar}
         />
       )}
     </>
