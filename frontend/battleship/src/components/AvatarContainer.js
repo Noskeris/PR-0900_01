@@ -1,7 +1,8 @@
 import React from "react";
 import {
-  Paper,
   Typography,
+  Button,
+  Paper,
   Divider,
 } from "@mui/material";
 import AvatarComponent from "./AvatarComponent";
@@ -20,7 +21,26 @@ const AvatarContainer = ({ config, changeAvatar }) => {
         Build your avatar
       </Typography>
       <Divider sx={{ mb: 1 }} />
-      <AvatarComponent config={config} changeHead={setHeadType} changeAppearance={setAppearance} />
+      <Button
+            style={{ marginBottom: '10px' }}
+            variant="contained"
+            color="secondary"
+            onClick={() => setHeadType(config.headType === 'RoundHeaded' ? 2 : 1)}
+            fullWidth
+        >
+            Another head
+        </Button>
+        
+        <Button
+            style={{ marginBottom: '20px' }}
+            variant="contained"
+            color="secondary"
+            onClick={() => setAppearance(config.appearance.type === 'Hair' ? 2 : 1)}
+            fullWidth
+        >
+            Another appearance
+        </Button>
+      <AvatarComponent config={config} />
     </Paper>
   );
 };

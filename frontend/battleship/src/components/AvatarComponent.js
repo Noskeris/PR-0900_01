@@ -1,16 +1,5 @@
 import React from 'react';
 
-import {
-    Grid,
-    Box,
-    Typography,
-    Button,
-    Paper,
-    Divider,
-    Stack,
-    Avatar,
-  } from "@mui/material";
-
 const Head = ({ type }) => {
     const headImage = type === 'RoundHeaded' ? '/avatar/roundedHead.png' : '/avatar/triangleHead.png';
     return <img src={headImage} style={{ position: 'absolute', maxWidth: '200px', left: '20px', marginTop: '40px' }} />;
@@ -50,28 +39,10 @@ const TriangleSmile = ({ shape }) => {
     return <img src={hairImage}  style={{ position: 'absolute', maxWidth: '40px', left: '140px', marginTop: '130px' }} />;
 };
 
-const AvatarComponent = ({ config, changeHead, changeAppearance }) => {
+const AvatarComponent = ({ config }) => {
     return (
         <>
-        <Button
-            style={{ marginBottom: '10px' }}
-            variant="contained"
-            color="secondary"
-            onClick={() => changeHead(config.headType === 'RoundHeaded' ? 2 : 1)}
-            fullWidth
-        >
-            Another head
-        </Button>
         
-        <Button
-            style={{ marginBottom: '20px' }}
-            variant="contained"
-            color="secondary"
-            onClick={() => changeAppearance(config.appearance.type === 'Hair' ? 2 : 1)}
-            fullWidth
-        >
-            Another appearance
-        </Button>
         <div style={{ position: 'relative', width: '200px', height: '250px', left: '60px' }}>
             {config.headType === 'RoundHeaded' &&
                 <>

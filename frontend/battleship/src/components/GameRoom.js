@@ -16,6 +16,7 @@ import SuperAttackSelector from "./SuperAttackSelector";
 import GameModeSelector from "./GameModeSelector";
 import CommandInput from "./ComamndInput";
 import AvatarContainer from "./AvatarContainer";
+import AllAvatarsContainer from "./AllAvatarsContainer";
 
 const GameRoom = ({
   messages,
@@ -250,6 +251,12 @@ const GameRoom = ({
                 />
               </Paper>
               {playerAvatarConfigs && <AvatarContainer config={playerAvatarConfigs} changeAvatar={changeAvatar} />}
+              </>
+            )}
+
+            {gameState === 3 && (
+              <>
+              {playerAvatarConfigs && <AllAvatarsContainer config={playerAvatarConfigs} changeAvatar={changeAvatar} />}
               </>
             )}
 

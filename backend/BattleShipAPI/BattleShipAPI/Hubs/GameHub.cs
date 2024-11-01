@@ -402,6 +402,12 @@ namespace BattleShipAPI.Hubs
                     "GameStateChanged",
                     (int)gameRoom.State);
 
+                var playerAvatars = players
+                    .Select(x => new AvatarResponse(x.PlayerId, x.Avatar.GetAvatarParameters()))
+                    .ToList();
+                
+                await _notificationService.NotifyGroup(Clients, gameRoom.Name, "AllAvatars", playerAvatars);
+
                 var startTime = DateTime.UtcNow;
                 await _notificationService.NotifyGroup(
                     Clients,
