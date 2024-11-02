@@ -1,17 +1,32 @@
-# Dockerfile for ReactJS Frontend
-FROM node:18 AS build
-WORKDIR /app
+FROM node:20.11.1-alpine as builder
 
-# Copy package.json and install dependencies
-COPY package*.json ./
-RUN npm install
+# set working directory
+WORKDIR /usr/src/app
 
-# Copy the rest of the application and build
-COPY . ./
+# add `usr/src/app/node_modules/.bin` to $PATH
+ENV PATH usr/src/app/node_modules/.bin:$PATH
+
+# install and cache app dependencies
+COPY package.json .
+COPY package-lock.json .
+RUN npm ci
+
+# create build
+COPY . .
 RUN npm run build
 
-# Use nginx to serve the built files
-FROM nginx:alpine
-COPY --from=build /app/build /usr/share/nginx/html
+# pull official base image
+FROM nginx:1.25.2-alpine
+
+# update nginx conf
+RUN rm -rf /etc/nginx/conf.d
+COPY conf /etc/nginx
+
+# copy static files
+COPY --from=builder /usr/src/app/build /usr/share/nginx/html
+
+# expose port
 EXPOSE 80
+
+# run nginx
 CMD ["nginx", "-g", "daemon off;"]

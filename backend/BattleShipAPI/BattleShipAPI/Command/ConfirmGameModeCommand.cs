@@ -6,26 +6,13 @@ public class ConfirmGameModeCommand : IPlayerCommand
     {
         if (args.Length > 1 && Enum.TryParse<GameMode>(args[1], true, out var gameMode))
         {
-            if (context.Db.Connections.TryGetValue(context.ConnectionId, out var connection)
-                && context.Db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom)
-                && gameRoom.State == GameState.NotStarted)
-            {
-                var players = context.Db.Connections.Values
-                    .Where(c => c.GameRoomName == connection.GameRoomName)
-                    .ToList();
-
-                gameRoom.Mode = gameMode;
-                gameRoom.State = GameState.GameModeConfirmed;
-
-                await context.Hub.NotifyGroup(
-                    gameRoom.Name,
-                    "GameStateChanged",
-                    (int)gameRoom.State);
-            }
+            await context.GameFacade.ConfirmGameMode(context.CallerContext, context.Clients, gameMode);
         }
         else
         {
-            await context.Hub.NotifyClient(
+            await context.NotificationService.NotifyClient(
+                context.Clients,
+                context.CallerContext.ConnectionId,
                 "InvalidGameMode",
                 "Invalid game mode specified.");
         }

@@ -181,7 +181,7 @@ export const App = () => {
 
   const generateBoardAction = async () => {
     try {
-      await connection.invoke("GenerateBoard", gameMode);
+      await connection.invoke("GenerateBoard");
       console.log("UI generate board");
     } catch (error) {
       console.log("Generate board error: ", error);

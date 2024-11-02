@@ -1,5 +1,4 @@
-﻿using BattleShipAPI.Builders.ShipConfigs;
-using BattleShipAPI.Models;
+﻿using BattleShipAPI.Models;
 
 namespace BattleShipAPI.Builders.SuperAttackConfigs
 {

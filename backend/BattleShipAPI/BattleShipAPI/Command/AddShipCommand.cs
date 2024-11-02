@@ -14,24 +14,24 @@ public class AddShipCommand : IPlayerCommand
             int.TryParse(args[3], out var startY) &&
             Enum.TryParse<ShipOrientation>(args[4], true, out var shipOrientation))
         {
-            if (context.Db.Connections.TryGetValue(context.ConnectionId, out var connection)
-                && context.Db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom)
-                && gameRoom.State == GameState.PlacingShips)
+            if (context.Db.Connections.TryGetValue(context.CallerContext.ConnectionId, out var connection)
+                && context.Db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom))
             {
-                int endX = startX;
-                int endY = startY;
-
                 var shipConfig = gameRoom.ShipsConfig.FirstOrDefault(config => config.ShipType == shipType);
 
                 if (shipConfig == null)
                 {
-                    await context.Hub.NotifyClient(
+                    await context.NotificationService.NotifyClient(
+                        context.Clients,
+                        context.CallerContext.ConnectionId,
                         "FailedToAddShip",
                         "No available ships in config.");
                     return;
                 }
 
                 int shipSize = shipConfig.Size;
+                int endX = startX;
+                int endY = startY;
 
                 if (shipOrientation == ShipOrientation.Horizontal)
                 {
@@ -50,50 +50,14 @@ public class AddShipCommand : IPlayerCommand
                     endY,
                     revealShipAction: ship => RevealShipAsync(ship, gameRoom, context));
 
-                // Implement the logic of adding a ship
-                var board = gameRoom.Board;
-                var player = context.Db.Connections[context.ConnectionId];
-
-                if (player.PlacedShips.Count(x => x.ShipType == newShip.ShipType) >= shipConfig.Count)
-                {
-                    await context.Hub.NotifyClient(
-                        "FailedToAddShip",
-                        "No ships of this type left.");
-
-                    return;
-                }
-
-                player.PlacingActionHistory.AddInitialState(player.PlacedShips, gameRoom.Board);
-
-                if (!board.TryPutShipOnBoard(newShip, player.PlayerId))
-                {
-                    await context.Hub.NotifyClient(
-                        "FailedToAddShip",
-                        "Failed to add ship to board. Please try again.");
-
-                    return;
-                }
-
-                player.PlacedShips.Add(newShip);
-                player.PlacingActionHistory.AddAction(player.PlacedShips, gameRoom.Board);
-
-                context.Db.GameRooms[gameRoom.Name] = gameRoom;
-                context.Db.Connections[context.ConnectionId] = player;
-
-                await context.Hub.NotifyClient(
-                    "UpdatedShipsConfig",
-                    player.GetAllowedShipsConfig(gameRoom.ShipsConfig));
-
-                await context.Hub.NotifyGroup(
-                    gameRoom.Name,
-                    "BoardUpdated",
-                    gameRoom.Name,
-                    gameRoom.Board);
+                await context.GameFacade.AddShip(context.CallerContext, context.Clients, placedShip);
             }
         }
         else
         {
-            await context.Hub.NotifyClient(
+            await context.NotificationService.NotifyClient(
+                context.Clients,
+                context.CallerContext.ConnectionId,
                 "FailedToAddShip",
                 "Invalid command format for adding a ship.");
         }
