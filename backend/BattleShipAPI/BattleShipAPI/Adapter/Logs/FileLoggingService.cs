@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-
-namespace BattleShipAPI.Adapter.Logs
+﻿namespace BattleShipAPI.Adapter.Logs
 {
     public class FileLoggingService
     {

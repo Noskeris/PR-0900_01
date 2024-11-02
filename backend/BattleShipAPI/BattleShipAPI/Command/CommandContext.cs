@@ -1,21 +1,26 @@
-﻿using BattleShipAPI.Hubs;
+﻿using BattleShipAPI.Facade;
+using BattleShipAPI.Notifications;
 using BattleShipAPI.Repository;
 using Microsoft.AspNetCore.SignalR;
 
 public class CommandContext
 {
-    public GameHub Hub { get; }
     public IHubCallerClients Clients { get; }
     public HubCallerContext CallerContext { get; }
-    public string ConnectionId { get; }
     public InMemoryDB Db { get; }
+    public GameFacade GameFacade { get; }
+    public INotificationService NotificationService { get; }
 
-    public CommandContext(GameHub hub)
+    public CommandContext(
+        GameFacade gameFacade,
+        IHubCallerClients clients,
+        HubCallerContext callerContext,
+        INotificationService notificationService)
     {
-        Hub = hub;
-        Clients = hub.Clients;
-        CallerContext = hub.Context;
-        ConnectionId = hub.Context.ConnectionId;
+        GameFacade = gameFacade;
+        Clients = clients;
+        CallerContext = callerContext;
+        NotificationService = notificationService;
         Db = InMemoryDB.Instance;
     }
 }

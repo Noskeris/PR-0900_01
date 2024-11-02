@@ -1,7 +1,4 @@
-﻿using BattleShipAPI.Builders;
-using BattleShipAPI.Builders.ShipConfigs;
-using BattleShipAPI.GameItems.Boards;
-using BattleShipAPI.GameItems.Ships;
+﻿using BattleShipAPI.GameItems.Ships;
 using BattleShipAPI.GameItems.SuperAttacks;
 using BattleShipAPI.Models;
 

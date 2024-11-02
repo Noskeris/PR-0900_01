@@ -1,5 +1,4 @@
 ﻿using BattleShipAPI.Enums;
-using System.Drawing;
 using BattleShipAPI.Bridge;
 using BattleShipAPI.Enums.Avatar;
 

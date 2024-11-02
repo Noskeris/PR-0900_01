@@ -1,4 +1,5 @@
 using BattleShipAPI.Adapter.Logs;
+using BattleShipAPI.Facade;
 using BattleShipAPI.Hubs;
 using BattleShipAPI.Notifications;
 
@@ -33,15 +34,13 @@ namespace BattleShipAPI
             builder.Services.AddSingleton<FileLoggerAdapter>(provider => new FileLoggerAdapter("GameHub_logs.txt"));
 
             builder.Services.AddSingleton<INotificationService, NotificationService>();
+            builder.Services.AddSingleton<GameFacade>();
+            builder.Services.AddSingleton<CommandFacade>();
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
+            app.UseSwagger();
+            app.UseSwaggerUI();
 
             app.UseHttpsRedirection();
 

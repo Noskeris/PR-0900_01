@@ -1,4 +1,3 @@
-using BattleShipAPI.Enums;
 using BattleShipAPI.Models;
 
 namespace BattleShipAPI.Builders.ShipConfigs;

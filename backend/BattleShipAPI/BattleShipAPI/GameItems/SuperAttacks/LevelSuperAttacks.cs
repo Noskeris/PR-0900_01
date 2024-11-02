@@ -1,5 +1,4 @@
 using BattleShipAPI.Models;
-using BattleShipAPI.Prototype;
 
 namespace BattleShipAPI.GameItems.SuperAttacks;
 

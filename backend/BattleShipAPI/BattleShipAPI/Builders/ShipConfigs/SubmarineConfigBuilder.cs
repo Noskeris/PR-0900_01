@@ -1,6 +1,4 @@
-﻿using BattleShipAPI.Models;
-
-namespace BattleShipAPI.Builders.ShipConfigs
+﻿namespace BattleShipAPI.Builders.ShipConfigs
 {
     public class SubmarineConfigBuilder : ShipConfigBuilder
     {
