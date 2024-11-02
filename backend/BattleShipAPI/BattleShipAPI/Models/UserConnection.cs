@@ -1,5 +1,7 @@
 ﻿using BattleShipAPI.Enums;
 using System.Drawing;
+using BattleShipAPI.Bridge;
+using BattleShipAPI.Enums.Avatar;
 
 namespace BattleShipAPI.Models
 {
@@ -22,6 +24,8 @@ namespace BattleShipAPI.Models
         public List<SuperAttackConfig> UsedSuperAttacks { get; set; } = new();
 
         public PlacingActionHistory PlacingActionHistory { get; set; } = new();
+        
+        public Avatar Avatar { get; set; } = AvatarFactory.CreateAvatar(HeadType.RoundHeaded, AppearanceType.Hair);
 
         public List<ShipConfig> GetAllowedShipsConfig(List<ShipConfig> shipsConfig)
         {

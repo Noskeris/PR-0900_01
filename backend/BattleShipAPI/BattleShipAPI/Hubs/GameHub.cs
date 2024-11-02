@@ -1,6 +1,8 @@
 ﻿using BattleShipAPI.Adapter.Logs;
 using BattleShipAPI.AttackStrategy;
+using BattleShipAPI.Bridge;
 using BattleShipAPI.Enums;
+using BattleShipAPI.Enums.Avatar;
 using BattleShipAPI.Factories;
 using BattleShipAPI.Helpers;
 using BattleShipAPI.Models;
@@ -222,6 +224,32 @@ namespace BattleShipAPI.Hubs
                     "BoardGenerated",
                     gameRoom.Name,
                     gameRoom.Board);
+
+                foreach (var player in _db.Connections.Values.Where(x => x.GameRoomName == gameRoom.Name))
+                {
+                    await _notificationService.NotifyClient(
+                        Clients,
+                        player.PlayerId,
+                        "SetPlayerAvatarConfigs",
+                        player.Avatar.GetAvatarParameters());
+                }
+            }
+        }
+
+        public async Task ChangeAvatar(HeadType headType, AppearanceType appearanceType)
+        {
+            if (_db.Connections.TryGetValue(Context.ConnectionId, out var connection)
+                && _db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom)
+                && gameRoom.State == GameState.PlacingShips)
+            {
+                var avatar = AvatarFactory.CreateAvatar(headType, appearanceType);
+                _db.Connections[Context.ConnectionId].Avatar = avatar;
+
+                await _notificationService.NotifyClient(
+                    Clients,
+                    connection.PlayerId,
+                    "SetPlayerAvatarConfigs",
+                    avatar.GetAvatarParameters());
             }
         }
 
@@ -404,6 +432,15 @@ namespace BattleShipAPI.Hubs
                     "GameStateChanged",
                     (int)gameRoom.State);
 
+                var playerAvatars = players
+                    .Select(x => new AvatarResponse(
+                        x.Username,
+                        x.Avatar.GetAvatarParameters(),
+                        x is { CanPlay: true, HasDisconnected: false }))
+                    .ToList();
+                
+                await _notificationService.NotifyGroup(Clients, gameRoom.Name, "AllAvatars", playerAvatars);
+
                 var startTime = DateTime.UtcNow;
                 await _notificationService.NotifyGroup(
                     Clients,
@@ -517,6 +554,15 @@ namespace BattleShipAPI.Hubs
                 }
 
                 _db.GameRooms[gameRoom.Name] = gameRoom;
+                
+                var playerAvatars = players
+                    .Select(x => new AvatarResponse(
+                        x.Username,
+                        x.Avatar.GetAvatarParameters(),
+                        x is { CanPlay: true, HasDisconnected: false }))
+                    .ToList();
+                
+                await _notificationService.NotifyGroup(Clients, gameRoom.Name, "AllAvatars", playerAvatars);
             }
         }
 
@@ -744,6 +790,15 @@ namespace BattleShipAPI.Hubs
                             throw new ArgumentOutOfRangeException();
                     }
                 }
+                
+                var playerAvatars = players
+                    .Select(x => new AvatarResponse(
+                        x.Username,
+                        x.Avatar.GetAvatarParameters(),
+                        x is { CanPlay: true, HasDisconnected: false }))
+                    .ToList();
+                
+                await _notificationService.NotifyGroup(Clients, gameRoom.Name, "AllAvatars", playerAvatars);
             }
 
             await base.OnDisconnectedAsync(exception);
