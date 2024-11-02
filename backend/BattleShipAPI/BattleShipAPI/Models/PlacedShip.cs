@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using BattleShipAPI.Enums;
+using BattleShipAPI.GameItems.Boards;
 
 namespace BattleShipAPI.Models
 {
@@ -18,13 +19,25 @@ namespace BattleShipAPI.Models
 
         public bool IsSunk => GetCoordinates().All(c => _hitCoordinates.Contains(c));
 
-        public void Hit(int x, int y)
+        public void Hit(int x, int y, Board board)
         {
             if (GetCoordinates().Contains((x, y)))
             {
                 _hitCoordinates.Add((x, y));
+
+                board.Cells[x][y].State = CellState.DamagedShip;
+
+                if (IsSunk)
+                {
+                    foreach (var (cx, cy) in GetCoordinates())
+                    {
+                        board.Cells[cx][cy].State = CellState.SunkenShip;
+                    }
+                }
             }
+            Console.WriteLine($"Ship hit at PlacedShip.cs {x}, {y}");
         }
+
 
         public List<(int x, int y)> GetCoordinates()
         {

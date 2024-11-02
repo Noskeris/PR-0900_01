@@ -1,5 +1,5 @@
 ﻿using BattleShipAPI.Enums;
-using System.Collections.Generic;
+using BattleShipAPI.GameItems.Boards;
 
 public interface IPlacedShip
 {
@@ -9,7 +9,6 @@ public interface IPlacedShip
     int EndX { get; set; }
     int EndY { get; set; }
     bool IsSunk { get; }
-    void Hit(int x, int y);
+    void Hit(int x, int y, Board board);
     List<(int x, int y)> GetCoordinates();
 }
-

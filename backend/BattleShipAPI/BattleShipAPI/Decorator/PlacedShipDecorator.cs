@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using BattleShipAPI.Enums;
+using BattleShipAPI.GameItems.Boards;
 
 public abstract class PlacedShipDecorator : IPlacedShip
 {
@@ -42,10 +43,12 @@ public abstract class PlacedShipDecorator : IPlacedShip
 
     public virtual bool IsSunk => _placedShip.IsSunk;
 
-    public virtual void Hit(int x, int y)
+    public virtual void Hit(int x, int y, Board board)
     {
-        _placedShip.Hit(x, y);
+        _placedShip.Hit(x, y, board);
+        Console.WriteLine($"Ship hit at {x}, {y}");
     }
+
 
     public virtual List<(int x, int y)> GetCoordinates()
     {

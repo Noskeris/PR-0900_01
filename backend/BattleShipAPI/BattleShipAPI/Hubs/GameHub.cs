@@ -44,7 +44,7 @@ namespace BattleShipAPI.Hubs
 
         public async Task AddShip(PlacedShip placedShipData)
         {
-            await _gameFacade.AddShip(Context, Clients, placedShip);
+            await _gameFacade.AddShip(Context, Clients, placedShipData);
         }
 
         public async Task SetPlayerToReady()
@@ -64,6 +64,7 @@ namespace BattleShipAPI.Hubs
         
         public async Task AttackCell(int x, int y, AttackType attackType = AttackType.Normal)
         {
+            Console.WriteLine($"AttackCell in gamehub {x}, {y}");
             await _gameFacade.AttackCell(Context, Clients, x, y, attackType);
         }
 

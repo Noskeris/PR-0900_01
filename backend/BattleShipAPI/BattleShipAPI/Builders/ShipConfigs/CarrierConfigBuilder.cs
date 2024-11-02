@@ -14,6 +14,18 @@
             return this;
         }
 
+        public override ShipConfigBuilder AddGlowing()
+        {
+            shipConfig.IsGlowing = true;
+            return this;
+        }
+
+        public override ShipConfigBuilder AddFragile()
+        {
+            shipConfig.IsFragile = true;
+            return this;
+        }
+
         public override ShipConfigBuilder StartMobility()
         {
             shipConfig.ShipType = Enums.ShipType.Carrier;

@@ -4,6 +4,7 @@ using BattleShipAPI.Bridge;
 using BattleShipAPI.Enums;
 using BattleShipAPI.Enums.Avatar;
 using BattleShipAPI.Factories;
+using BattleShipAPI.GameItems.Boards;
 using BattleShipAPI.Helpers;
 using BattleShipAPI.Models;
 using BattleShipAPI.Notifications;
@@ -246,18 +247,17 @@ public class GameFacade
     }
 
     public async Task AddShip(
-        HubCallerContext context,
-        IHubCallerClients clients,
-        PlacedShip placedShip)
+    HubCallerContext context,
+    IHubCallerClients clients,
+    PlacedShip placedShipData)
     {
         if (_db.Connections.TryGetValue(context.ConnectionId, out var connection)
             && _db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom)
             && gameRoom.State == GameState.PlacingShips)
         {
-            var board = gameRoom.Board;
             var player = _db.Connections[context.ConnectionId];
             var shipConfig = gameRoom.ShipsConfig
-                .FirstOrDefault(x => x.ShipType == placedShip.ShipType);
+                .FirstOrDefault(x => x.ShipType == placedShipData.ShipType);
 
             if (shipConfig == null)
             {
@@ -270,7 +270,7 @@ public class GameFacade
                 return;
             }
 
-            if (player.PlacedShips.Count(x => x.ShipType == placedShip.ShipType) == shipConfig.Count)
+            if (player.PlacedShips.Count(x => x.ShipType == placedShipData.ShipType) >= shipConfig.Count)
             {
                 await _notificationService.NotifyClient(
                     clients,
@@ -283,12 +283,15 @@ public class GameFacade
 
             player.PlacingActionHistory.AddInitialState(player.PlacedShips, gameRoom.Board);
 
-            if (!board.TryPutShipOnBoard(
-                    placedShip.StartX,
-                    placedShip.StartY,
-                    placedShip.EndX,
-                    placedShip.EndY,
-                    player.PlayerId))
+            // Create the ship using ShipConfig.CreateShip
+            IPlacedShip newShip = shipConfig.CreateShip(
+                placedShipData.StartX,
+                placedShipData.StartY,
+                placedShipData.EndX,
+                placedShipData.EndY,
+                revealShipAction: async (ship, board) => await RevealShipAsync(ship, board, gameRoom.Name, clients));
+
+            if (!gameRoom.Board.TryPutShipOnBoard(newShip, player.PlayerId))
             {
                 await _notificationService.NotifyClient(
                     clients,
@@ -299,7 +302,7 @@ public class GameFacade
                 return;
             }
 
-            player.PlacedShips.Add(placedShip);
+            player.PlacedShips.Add(newShip);
             player.PlacingActionHistory.AddAction(player.PlacedShips, gameRoom.Board);
 
             _db.GameRooms[gameRoom.Name] = gameRoom;
@@ -319,6 +322,27 @@ public class GameFacade
                 gameRoom.Board);
         }
     }
+
+
+    private async Task RevealShipAsync(IPlacedShip ship, Board board, string gameRoomName, IHubCallerClients clients)
+    {
+        var coordinates = ship.GetCoordinates();
+        foreach (var (x, y) in coordinates)
+        {
+            board.Cells[x][y].IsRevealed = true;
+        }
+
+        // Notify clients about the update
+        await _notificationService.NotifyGroup(
+            clients,
+            gameRoomName,
+            "BoardUpdated",
+            gameRoomName,
+            board);
+    }
+
+
+
 
     public async Task SetPlayerToReady(
         HubCallerContext context,
@@ -457,6 +481,7 @@ public class GameFacade
         int y,
         AttackType attackType)
     {
+        Console.WriteLine($"AttackCell in gamefacade {x}, {y}");
         if (_db.Connections.TryGetValue(context.ConnectionId, out var connection)
             && _db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom)
             && gameRoom.State == GameState.InProgress
@@ -594,6 +619,7 @@ public class GameFacade
         UserConnection connection,
         IHubCallerClients clients)
     {
+        Console.WriteLine($"AttackCellByOne in gamefacade {x}, {y}");
         var cell = gameRoom.Board.Cells[x][y];
 
         if (cell.State == CellState.HasShip)

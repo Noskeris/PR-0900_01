@@ -1,6 +1,6 @@
-// File: Models/ShipConfig.cs
 using System;
 using BattleShipAPI.Enums;
+using BattleShipAPI.GameItems.Boards;
 
 namespace BattleShipAPI.Models
 {
@@ -14,7 +14,12 @@ namespace BattleShipAPI.Models
         public bool IsFragile { get; set; }
         public bool IsGlowing { get; set; }
 
-        public IPlacedShip CreateShip(int startX, int startY, int endX, int endY, Action<IPlacedShip> revealShipAction = null)
+        public IPlacedShip CreateShip(
+    int startX,
+    int startY,
+    int endX,
+    int endY,
+    Action<IPlacedShip, Board> revealShipAction = null)
         {
             IPlacedShip ship = new PlacedShip
             {
@@ -27,7 +32,7 @@ namespace BattleShipAPI.Models
 
             if (HasShield)
             {
-                ship = new ShieldedShipDecorator(ship, shieldStrength: 2); 
+                ship = new ShieldedShipDecorator(ship, shieldStrength: 2);
             }
 
             if (IsFragile)
@@ -42,5 +47,6 @@ namespace BattleShipAPI.Models
 
             return ship;
         }
+
     }
 }

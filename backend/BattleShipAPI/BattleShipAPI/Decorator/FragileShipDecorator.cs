@@ -1,4 +1,5 @@
 ﻿using BattleShipAPI.Enums;
+using BattleShipAPI.GameItems.Boards;
 
 
 public class FragileShipDecorator : PlacedShipDecorator
@@ -7,13 +8,14 @@ public class FragileShipDecorator : PlacedShipDecorator
     {
     }
 
-    public override void Hit(int x, int y)
+    public override void Hit(int x, int y, Board board)
     {
-        // When hit, mark all coordinates as hit
         foreach (var coord in GetCoordinates())
         {
-            _placedShip.Hit(coord.x, coord.y);
+            _placedShip.Hit(coord.x, coord.y, board);
         }
+        Console.WriteLine($"Fragile ship hit");
     }
+
 }
 

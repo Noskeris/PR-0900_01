@@ -17,6 +17,8 @@ public abstract class ShipConfigBuilder
     public abstract ShipConfigBuilder StartMobility();
     public abstract ShipConfigBuilder AddShield();
     public abstract ShipConfigBuilder AddMobility();
+    public abstract ShipConfigBuilder AddGlowing();
+    public abstract ShipConfigBuilder AddFragile();
 
     public ShipConfig Build()
     {
