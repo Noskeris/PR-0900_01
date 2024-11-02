@@ -1,0 +1,8 @@
+﻿services:
+  battleshipapi:
+    image: noskeris.azurecr.io/battleshipapi
+    build:
+      context: .
+      dockerfile: BattleShipAPI/Dockerfile
+    ports:
+      - "8080:8080"
