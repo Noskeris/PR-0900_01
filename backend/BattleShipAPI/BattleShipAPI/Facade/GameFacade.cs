@@ -19,7 +19,7 @@ public class GameFacade
     private readonly ILoggerInterface _loggerOnReceive;
     private readonly ILoggerInterface _loggerOnSend;
 
-    public GameFacade(INotificationService notificationService, ILoggerInterface loggerOnReceive, ILoggerInterface loggerOnSend)
+    public GameFacade(INotificationService notificationService, ConsoleLoggerAdapter loggerOnReceive, FileLoggerAdapter loggerOnSend)
     {
         _notificationService = notificationService;
         _loggerOnReceive = loggerOnReceive;
