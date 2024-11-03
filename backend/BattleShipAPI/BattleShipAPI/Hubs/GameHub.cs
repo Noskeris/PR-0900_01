@@ -5,9 +5,7 @@ using BattleShipAPI.Models;
 using BattleShipAPI.Repository;
 using Microsoft.AspNetCore.SignalR;
 
-//TODO add ship shield logic
 //TODO add ship mobility logic
-//TODO DESIGN PATTERN decorator
 
 namespace BattleShipAPI.Hubs
 {
@@ -42,9 +40,9 @@ namespace BattleShipAPI.Hubs
             await _gameFacade.ChangeAvatar(Context, Clients, headType, appearanceType);
         }
 
-        public async Task AddShip(PlacedShip placedShip)
+        public async Task AddShip(PlacedShip placedShipData)
         {
-            await _gameFacade.AddShip(Context, Clients, placedShip);
+            await _gameFacade.AddShip(Context, Clients, placedShipData);
         }
 
         public async Task SetPlayerToReady()
@@ -64,6 +62,7 @@ namespace BattleShipAPI.Hubs
         
         public async Task AttackCell(int x, int y, AttackType attackType = AttackType.Normal)
         {
+            Console.WriteLine($"AttackCell in gamehub {x}, {y}");
             await _gameFacade.AttackCell(Context, Clients, x, y, attackType);
         }
 

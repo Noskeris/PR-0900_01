@@ -1,5 +1,10 @@
 ﻿using BattleShipAPI.Enums;
 using BattleShipAPI.Models;
+using BattleShipAPI.Facade;
+using BattleShipAPI.Notifications;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 public class AddShipCommand : IPlayerCommand
 {
@@ -12,7 +17,8 @@ public class AddShipCommand : IPlayerCommand
             Enum.TryParse<ShipOrientation>(args[4], true, out var shipOrientation))
         {
             if (context.Db.Connections.TryGetValue(context.CallerContext.ConnectionId, out var connection)
-                && context.Db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom))
+                && context.Db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom)
+                && gameRoom.State == GameState.PlacingShips)
             {
                 var shipConfig = gameRoom.ShipsConfig.FirstOrDefault(config => config.ShipType == shipType);
 
@@ -39,7 +45,8 @@ public class AddShipCommand : IPlayerCommand
                     endY = startY + shipSize - 1;
                 }
 
-                var placedShip = new PlacedShip
+                // Create a PlacedShip instance with the provided data
+                var placedShipData = new PlacedShip
                 {
                     ShipType = shipType,
                     StartX = startX,
@@ -48,7 +55,16 @@ public class AddShipCommand : IPlayerCommand
                     EndY = endY
                 };
 
-                await context.GameFacade.AddShip(context.CallerContext, context.Clients, placedShip);
+                // Call GameFacade.AddShip with the PlacedShip data
+                await context.GameFacade.AddShip(context.CallerContext, context.Clients, placedShipData);
+            }
+            else
+            {
+                await context.NotificationService.NotifyClient(
+                    context.Clients,
+                    context.CallerContext.ConnectionId,
+                    "FailedToAddShip",
+                    "Game is not in a state to add ships or you are not in a game room.");
             }
         }
         else

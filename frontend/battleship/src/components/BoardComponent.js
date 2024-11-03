@@ -86,20 +86,30 @@ const BoardComponent = ({
 
   const getCellClassName = (cell) => {
     let ownerColor = "defaultcell";
-
+  
     if (cell.ownerId === playerId) {
       if (cell.state === 2 && gameState === 2) {
-        return (ownerColor = "hasship");
+        ownerColor = "hasship";
       } else if (cell.state === 2) {
         ownerColor = "hasship";
       } else {
         ownerColor = "purple";
       }
     }
-
+  
+    let addRevealed = false;
+    // Check if the cell is revealed
+    if (cell.isRevealed) {
+      addRevealed = true;
+    }
+  
     switch (cell.state) {
       case "hoverOver":
-        return "hoverOver";
+        if (addRevealed){
+          return "revealedShip hoverOver";
+        } else {
+          return "hoverOver";
+        }
       case 3:
         return "damagedship";
       case 4:
@@ -111,9 +121,15 @@ const BoardComponent = ({
       case "forbidden":
         return "forbidden";
       default:
-        return `${ownerColor}`;
+        if (addRevealed && cell.ownerId !== playerId){
+          return `revealedShip`;
+        } else {
+          return `${ownerColor}`;
+        }
+        
     }
   };
+  
 
   const handleCellClick = (xIndex, yIndex) => {
     if (gameState === 2 && currentlyPlacing) {
@@ -206,7 +222,7 @@ const BoardComponent = ({
       );
       
       if(attackType === "normal"){
-        if (updatedCells[x][y].ownerId !== playerId && classList.contains("defaultcell")) {
+        if (updatedCells[x][y].ownerId !== playerId && (classList.contains("defaultcell") || classList.contains("revealedShip"))) {
           updatedCells[x][y].state = "hoverOver";
           setCells(updatedCells);
         }

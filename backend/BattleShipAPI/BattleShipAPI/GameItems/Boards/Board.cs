@@ -41,28 +41,36 @@ namespace BattleShipAPI.GameItems.Boards
                     players[i].PlayerId);
             }
         }
-        
-        public bool TryPutShipOnBoard(int xStart, int yStart, int xEnd, int yEnd, string ownerId)
+
+        public bool TryPutShipOnBoard(IPlacedShip ship, string ownerId)
         {
-            for (int x = xStart; x <= xEnd; x++)
+            var coordinates = ship.GetCoordinates();
+
+            // Validate that the ship can be placed at the coordinates
+            foreach (var (x, y) in coordinates)
             {
-                for (int y = yStart; y <= yEnd; y++)
+                if (x < 0 || x >= XLength || y < 0 || y >= YLength)
                 {
-                    if (Cells[x][y].OwnerId == ownerId)
-                    {
-                        Cells[x][y].State = CellState.HasShip;
-                    }
-                    else
-                    {
-                        return false;
-                    }
+                    return false; // Coordinates out of bounds
                 }
+
+                if (Cells[x][y].OwnerId != ownerId || Cells[x][y].State != CellState.Empty)
+                {
+                    return false; // Cannot place ship here
+                }
+            }
+
+            // Place the ship
+            foreach (var (x, y) in coordinates)
+            {
+                Cells[x][y].State = CellState.HasShip;
+                Cells[x][y].OwnerId = ownerId;
             }
 
             return true;
         }
-        
-        public void SinkShip(PlacedShip ship)
+
+        public void SinkShip(IPlacedShip ship)
         {
             for (int x = ship.StartX; x <= ship.EndX; x++)
             {

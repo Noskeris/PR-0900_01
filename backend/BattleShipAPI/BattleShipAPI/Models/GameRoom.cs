@@ -82,38 +82,22 @@ namespace BattleShipAPI.Models
             {
                 return false;
             }
-            
-            attackedCell.State = CellState.DamagedShip;
 
             var ship = player.PlacedShips
-                .First(s => s.StartX <= x && s.EndX >= x && s.StartY <= y && s.EndY >= y);
+                .FirstOrDefault(s => s.GetCoordinates().Contains((x, y)));
 
-            var isShipFullyDamaged = true;
-
-            if (ship != null) // Ensure the ship is found
+            if (ship == null)
             {
-                for (int i = ship.StartX; i <= ship.EndX; i++)
-                {
-                    for (int j = ship.StartY; j <= ship.EndY; j++)
-                    {
-                        if (Board.Cells[i][j].OwnerId == player.PlayerId &&
-                            Board.Cells[i][j].State != CellState.DamagedShip)
-                        {
-                            isShipFullyDamaged = false;
-                            break;
-                        }
-                    }
-                    if (!isShipFullyDamaged) break;
-                }
+                return false;
             }
 
-            if (isShipFullyDamaged)
-            {
-                Board.SinkShip(ship);
-            }
+            ship.Hit(x, y, Board);
+
+            var isShipFullyDamaged = ship.IsSunk;
 
             return isShipFullyDamaged;
         }
+
 
         public bool HasAliveShips(UserConnection cellOwner)
         {

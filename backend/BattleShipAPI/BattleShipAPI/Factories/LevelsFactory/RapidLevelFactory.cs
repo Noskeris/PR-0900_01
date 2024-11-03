@@ -10,10 +10,10 @@ namespace BattleShipAPI.Factories.LevelsFactory
         {
             var shipConfigs = new List<ShipConfig>
             {
-                this.BattleshipBuilder.StartRapid().AddShield().Build(),
-                this.CarrierBuilder.StartRapid().AddShield().Build(),
-                this.CruiserBuilder.StartRapid().AddShield().Build(),
-                this.DestroyerBuilder.StartRapid().AddShield().Build(),
+                this.BattleshipBuilder.StartRapid().AddGlowing().Build(),
+                this.CarrierBuilder.StartRapid().AddGlowing().Build(),
+                this.CruiserBuilder.StartRapid().AddFragile().Build(),
+                this.DestroyerBuilder.StartRapid().AddFragile().Build(),
                 this.SubmarineBuilder.StartRapid().AddShield().Build()
             };
 

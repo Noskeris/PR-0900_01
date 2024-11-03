@@ -18,7 +18,7 @@ namespace BattleShipAPI.Models
         
         public bool HasDisconnected { get; set; }
         
-        public List<PlacedShip> PlacedShips { get; set; } = new();
+        public List<IPlacedShip> PlacedShips { get; set; } = new();
         
         public List<SuperAttackConfig> UsedSuperAttacks { get; set; } = new();
 
