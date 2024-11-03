@@ -84,6 +84,23 @@
   animation: shake 50ms 6 alternate backwards;
 }
 
+/* Revealed Ship */
+.board .revealedShip {
+  background-color: var(--oc-teal-5);
+  border: 1px solid var(--oc-teal-6);
+  animation: glow 1s infinite alternate;
+}
+
+@keyframes glow {
+  from {
+    box-shadow: 0 0 5px var(--oc-teal-5);
+  }
+  to {
+    box-shadow: 0 0 15px var(--oc-teal-3);
+  }
+}
+
+
 /* Forbidden square  */
 
 .board .forbidden {

@@ -86,17 +86,22 @@ const BoardComponent = ({
 
   const getCellClassName = (cell) => {
     let ownerColor = "defaultcell";
-
+  
     if (cell.ownerId === playerId) {
       if (cell.state === 2 && gameState === 2) {
-        return (ownerColor = "hasship");
+        ownerColor = "hasship";
       } else if (cell.state === 2) {
         ownerColor = "hasship";
       } else {
         ownerColor = "purple";
       }
     }
-
+  
+    // Check if the cell is revealed
+    if (cell.isRevealed) {
+      return "revealedShip";
+    }
+  
     switch (cell.state) {
       case "hoverOver":
         return "hoverOver";
@@ -114,6 +119,7 @@ const BoardComponent = ({
         return `${ownerColor}`;
     }
   };
+  
 
   const handleCellClick = (xIndex, yIndex) => {
     if (gameState === 2 && currentlyPlacing) {
