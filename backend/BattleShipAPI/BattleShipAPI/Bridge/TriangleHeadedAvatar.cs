@@ -4,7 +4,7 @@ namespace BattleShipAPI.Bridge;
 
 public class TriangleHeadedAvatar : Avatar
 {
-    public TriangleHeadedAvatar(IAppearance appearance) : base(appearance) 
+    public TriangleHeadedAvatar(Appearance appearance) : base(appearance) 
     { 
         SetMood(); 
         HasPimples = new Random().Next(0, 2) == 1;

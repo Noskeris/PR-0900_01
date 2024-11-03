@@ -5,11 +5,11 @@ namespace BattleShipAPI.Bridge;
 
 public abstract class Avatar
 {
-    protected IAppearance Appearance;
-    public MoodType Mood { get; protected set; }
-    public bool HasPimples { get; protected set; }
+    private Appearance Appearance;
+    protected MoodType Mood { get; set; }
+    protected bool HasPimples { get; set; }
 
-    protected Avatar(IAppearance appearance)
+    public Avatar(Appearance appearance)
     {
         Appearance = appearance;
     }

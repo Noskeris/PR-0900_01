@@ -1,7 +1,7 @@
 namespace BattleShipAPI.Bridge;
 
-public interface IAppearance
+public abstract class Appearance
 {
-    string Shape { get; }
-    string Color { get; }
+    public string Shape { get; }
+    public string Color { get; }
 }

@@ -2,11 +2,11 @@ using BattleShipAPI.Enums.Avatar;
 
 namespace BattleShipAPI.Bridge;
 
-public class AvatarFactory
+public static class AvatarFactory
 {
     public static Avatar CreateAvatar(HeadType headType, AppearanceType appearanceType)
     {
-        IAppearance appearance = appearanceType switch
+        Appearance appearance = appearanceType switch
         {
             AppearanceType.Hair => new HairAppearance(),
             AppearanceType.Cap => new CapAppearance(),
