@@ -14,7 +14,6 @@ public class FragileShipDecorator : PlacedShipDecorator
         {
             _placedShip.Hit(coord.x, coord.y, board);
         }
-        Console.WriteLine($"Fragile ship hit");
     }
 
 }

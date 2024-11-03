@@ -46,7 +46,6 @@ public abstract class PlacedShipDecorator : IPlacedShip
     public virtual void Hit(int x, int y, Board board)
     {
         _placedShip.Hit(x, y, board);
-        Console.WriteLine($"Ship hit at {x}, {y}");
     }
 
 

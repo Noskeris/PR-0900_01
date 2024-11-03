@@ -479,7 +479,6 @@ public class GameFacade
         int y,
         AttackType attackType)
     {
-        Console.WriteLine($"AttackCell in gamefacade {x}, {y}");
         if (_db.Connections.TryGetValue(context.ConnectionId, out var connection)
             && _db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom)
             && gameRoom.State == GameState.InProgress
@@ -617,7 +616,6 @@ public class GameFacade
         UserConnection connection,
         IHubCallerClients clients)
     {
-        Console.WriteLine($"AttackCellByOne in gamefacade {x}, {y}");
         var cell = gameRoom.Board.Cells[x][y];
 
         if (cell.State == CellState.HasShip || cell.State == CellState.SunkenShip)

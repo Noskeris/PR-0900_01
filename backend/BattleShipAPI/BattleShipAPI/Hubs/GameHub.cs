@@ -62,7 +62,6 @@ namespace BattleShipAPI.Hubs
         
         public async Task AttackCell(int x, int y, AttackType attackType = AttackType.Normal)
         {
-            Console.WriteLine($"AttackCell in gamehub {x}, {y}");
             await _gameFacade.AttackCell(Context, Clients, x, y, attackType);
         }
 

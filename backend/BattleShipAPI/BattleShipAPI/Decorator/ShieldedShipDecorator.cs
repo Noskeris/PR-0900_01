@@ -17,8 +17,6 @@ public class ShieldedShipDecorator : PlacedShipDecorator
         if (_shieldStrength > 0)
         {
             _shieldStrength--;
-            Console.WriteLine($"Shield absorbed the hit at ({x}, {y}). Remaining shield strength: {_shieldStrength}");
-            // Optionally, you can update the board or notify players that the shield absorbed the hit
         }
         else
         {

@@ -35,7 +35,6 @@ namespace BattleShipAPI.Models
                     }
                 }
             }
-            Console.WriteLine($"Ship hit at PlacedShip.cs {x}, {y}");
         }
 
 
