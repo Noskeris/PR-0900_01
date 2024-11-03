@@ -5,9 +5,7 @@ using BattleShipAPI.Models;
 using BattleShipAPI.Repository;
 using Microsoft.AspNetCore.SignalR;
 
-//TODO add ship shield logic
 //TODO add ship mobility logic
-//TODO DESIGN PATTERN decorator
 
 namespace BattleShipAPI.Hubs
 {
