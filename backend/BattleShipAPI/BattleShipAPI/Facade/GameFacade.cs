@@ -27,7 +27,7 @@ public class GameFacade
         _db = InMemoryDB.Instance;
     }
 
-    public async Task<bool> JoinSpecificGameRoom(
+    public async Task JoinSpecificGameRoom(
         HubCallerContext context,
         IHubCallerClients clients,
         UserConnection connection)
@@ -51,7 +51,7 @@ public class GameFacade
                 Message = $"Sent JoinFailed to {connection.Username}",
             });
 
-            return false;
+            return;
         }
 
         if (_db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom) &&
@@ -68,7 +68,7 @@ public class GameFacade
                 Message = $"Sent JoinFailed to {connection.Username}",
             });
 
-            return false;
+            return;
         }
 
         var usersInRoom = _db.Connections.Values.Where(c => c.GameRoomName == connection.GameRoomName).ToList();
@@ -86,7 +86,7 @@ public class GameFacade
                 Message = $"Sent JoinFailed to {connection.Username}",
             });
 
-            return false;
+            return;
         }
 
         connection.PlayerId = context.ConnectionId;
@@ -138,8 +138,6 @@ public class GameFacade
         {
             Message = $"Sent JoinSpecificGameRoom to {connection.Username}",
         });
-
-        return true;
     }
 
     public async Task ConfirmGameMode(
@@ -414,7 +412,7 @@ public class GameFacade
                 "GameStateChanged",
                 (int)gameRoom.State);
 
-            await SendAvatarsToPlayers(clients, players, gameRoom);
+            await SendAvatarsToPlayers(clients, players, gameRoom.Name);
 
             var startTime = DateTime.UtcNow;
             await _notificationService.NotifyGroup(
@@ -537,7 +535,7 @@ public class GameFacade
 
             _db.GameRooms[gameRoom.Name] = gameRoom;
 
-            await SendAvatarsToPlayers(clients, players, gameRoom);
+            await SendAvatarsToPlayers(clients, players, gameRoom.Name);
         }
     }
     
@@ -801,11 +799,11 @@ public class GameFacade
             }
         }
 
-        await SendAvatarsToPlayers(clients, players, gameRoom);
+        await SendAvatarsToPlayers(clients, players, gameRoom.Name);
     }
 }
 
-    private async Task SendAvatarsToPlayers(IHubCallerClients clients, List<UserConnection> players, GameRoom? gameRoom)
+    private async Task SendAvatarsToPlayers(IHubCallerClients clients, List<UserConnection> players, string gameRoomName)
     {
         var playerAvatars = players
             .Select(x => new AvatarResponse(
@@ -814,6 +812,6 @@ public class GameFacade
                 x is { CanPlay: true, HasDisconnected: false }))
             .ToList();
 
-        await _notificationService.NotifyGroup(clients, gameRoom.Name, "AllAvatars", playerAvatars);
+        await _notificationService.NotifyGroup(clients, gameRoomName, "AllAvatars", playerAvatars);
     }
 }
