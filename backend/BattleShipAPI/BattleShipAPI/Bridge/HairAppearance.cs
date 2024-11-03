@@ -2,7 +2,7 @@ using BattleShipAPI.Enums.Avatar;
 
 namespace BattleShipAPI.Bridge;
 
-public class HairAppearance : IAppearance
+public class HairAppearance : Appearance
 {
     private static readonly Random _random = new Random();
     

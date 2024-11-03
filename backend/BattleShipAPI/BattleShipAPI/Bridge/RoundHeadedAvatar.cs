@@ -4,7 +4,7 @@ namespace BattleShipAPI.Bridge;
 
 public class RoundHeadedAvatar : Avatar
 {
-    public RoundHeadedAvatar(IAppearance appearance) : base(appearance) 
+    public RoundHeadedAvatar(Appearance appearance) : base(appearance) 
     { 
         SetMood(); 
         HasPimples = new Random().Next(0, 2) == 1;
