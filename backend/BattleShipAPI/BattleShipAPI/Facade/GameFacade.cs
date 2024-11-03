@@ -622,7 +622,7 @@ public class GameFacade
         Console.WriteLine($"AttackCellByOne in gamefacade {x}, {y}");
         var cell = gameRoom.Board.Cells[x][y];
 
-        if (cell.State == CellState.HasShip)
+        if (cell.State == CellState.HasShip || cell.State == CellState.SunkenShip)
         {
             var cellOwner = players.First(p => p.PlayerId == cell.OwnerId);
 
