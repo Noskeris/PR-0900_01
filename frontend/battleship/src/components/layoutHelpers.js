@@ -125,7 +125,7 @@ export const calculateAttackTypeHover = (cells, playerId, x, y, attackType) => {
   const element = document.getElementById(`${x}-${y}`);
   const classList = element.classList;
 
-  if(cells[x][y].ownerId === playerId || (!classList.contains("defaultcell") && !classList.contains("hoverOver") ))
+  if(cells[x][y].ownerId === playerId || ((!classList.contains("defaultcell") && !classList.contains("revealedShip")) && !classList.contains("hoverOver") ))
   {
     return cells;
   }
@@ -143,7 +143,7 @@ export const calculateAttackTypeHover = (cells, playerId, x, y, attackType) => {
       const element = document.getElementById(`${newX}-${newY}`);
       const classList = element.classList;
 
-      if (classList.contains("defaultcell") || classList.contains("hoverOver")) {
+      if (classList.contains("defaultcell") || classList.contains("hoverOver") || classList.contains("revealedShip")) {
         updatedCells[newX][newY].state = "hoverOver";
       }
     }

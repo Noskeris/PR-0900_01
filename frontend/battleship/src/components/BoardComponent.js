@@ -97,14 +97,19 @@ const BoardComponent = ({
       }
     }
   
+    let addRevealed = false;
     // Check if the cell is revealed
     if (cell.isRevealed) {
-      return "revealedShip";
+      addRevealed = true;
     }
   
     switch (cell.state) {
       case "hoverOver":
-        return "hoverOver";
+        if (addRevealed){
+          return "revealedShip hoverOver";
+        } else {
+          return "hoverOver";
+        }
       case 3:
         return "damagedship";
       case 4:
@@ -116,7 +121,12 @@ const BoardComponent = ({
       case "forbidden":
         return "forbidden";
       default:
-        return `${ownerColor}`;
+        if (addRevealed && cell.ownerId !== playerId){
+          return `revealedShip`;
+        } else {
+          return `${ownerColor}`;
+        }
+        
     }
   };
   
@@ -212,7 +222,7 @@ const BoardComponent = ({
       );
       
       if(attackType === "normal"){
-        if (updatedCells[x][y].ownerId !== playerId && classList.contains("defaultcell")) {
+        if (updatedCells[x][y].ownerId !== playerId && (classList.contains("defaultcell") || classList.contains("revealedShip"))) {
           updatedCells[x][y].state = "hoverOver";
           setCells(updatedCells);
         }
