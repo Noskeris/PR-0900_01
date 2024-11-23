@@ -1,4 +1,5 @@
 using BattleShipAPI.Enums;
+using BattleShipAPI.Flyweight;
 using BattleShipAPI.Notifications;
 using BattleShipAPI.Repository;
 using Microsoft.AspNetCore.SignalR;
@@ -10,13 +11,14 @@ public class CommandFacade
     private readonly INotificationService _notificationService;
     private readonly GameFacade _gameFacade;
     private readonly InMemoryDB _db;
-    private readonly Dictionary<string, IPlayerCommand> _commands = new();
-    
-    
+    private readonly FlyweightCommandFactory _commandFactory;
+
+
     public CommandFacade(
         INotificationService notificationService,
         GameFacade gameFacade)
     {
+        _commandFactory = new FlyweightCommandFactory();
         _db = InMemoryDB.Instance;
         _notificationService = notificationService;
         _gameFacade = gameFacade;
@@ -25,13 +27,13 @@ public class CommandFacade
     
     private void InitializeCommands()
     {
-        _commands["ready"] = new ReadyCommand();
-        _commands["start"] = new StartGameCommand();
-        _commands["gamemode"] = new ConfirmGameModeCommand();
-        _commands["generateboard"] = new GenerateBoardCommand();
-        _commands["addship"] = new AddShipCommand();
-        _commands["undoplacement"] = new UndoPlacementCommand();
-        _commands["redoplacement"] = new RedoPlacementCommand();
+        _commandFactory.GetCommand("ready", () => new ReadyCommand());
+        _commandFactory.GetCommand("start", () => new StartGameCommand());
+        _commandFactory.GetCommand("gamemode", () => new ConfirmGameModeCommand());
+        _commandFactory.GetCommand("generateboard", () => new GenerateBoardCommand());
+        _commandFactory.GetCommand("addship", () => new AddShipCommand());
+        _commandFactory.GetCommand("undoplacement", () => new UndoPlacementCommand());
+        _commandFactory.GetCommand("redoplacement", () => new RedoPlacementCommand());
     }
     
     public async Task UndoShipPlacement(
@@ -132,7 +134,8 @@ public class CommandFacade
 
         var action = commandParts[0].ToLower();
 
-        if (_commands.TryGetValue(action, out var playerCommand))
+        var playerCommand = _commandFactory.GetCommand(action, null);
+        if (playerCommand != null)
         {
             var commandContext = new CommandContext(_gameFacade, clients, context, _notificationService);
             await playerCommand.Execute(commandContext, commandParts);
