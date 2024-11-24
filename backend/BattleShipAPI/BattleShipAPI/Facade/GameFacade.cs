@@ -268,7 +268,7 @@ public class GameFacade
                 return;
             }
 
-            if (player.PlacedShips.Count(x => x.ShipType == placedShipData.ShipType) >= shipConfig.Count)
+            if (player.PlacedShips.CountShipsOfType(placedShipData.ShipType) >= shipConfig.Count)
             {
                 await _notificationService.NotifyClient(
                     clients,

@@ -1,3 +1,4 @@
+using BattleShipAPI.Iterator;
 using BattleShipAPI.Repository;
 using Microsoft.AspNetCore.SignalR;
 
@@ -17,7 +18,7 @@ public class NotificationService : INotificationService
     {
         _db.Listeners[listener] = true;
     }
-    
+
     public void Unsubscribe(string clientId)
     {
         _db.Listeners.Keys.Where(x => x.ClientId == clientId)
@@ -27,16 +28,19 @@ public class NotificationService : INotificationService
 
     public async Task NotifyGroup(IHubCallerClients clients, string groupName, string key, params object?[] values)
     {
-        var listeners = _db.Listeners
-            .Where(x => x.Key.GroupName == groupName);
+        var listenerCollection = new ListenerCollection(_db.Listeners);
+        var iterator = listenerCollection.CreateIterator();
 
-        var tasks = listeners.Select(listener =>
-            clients.Clients(listener.Key.ClientId).SendCoreAsync(key, values)
-        );
-
-        await Task.WhenAll(tasks);
+        while (iterator.HasNext())
+        {
+            var listener = iterator.Next();
+            if (listener.GroupName == groupName)
+            {
+                await clients.Client(listener.ClientId).SendCoreAsync(key, values);
+            }
+        }
     }
-    
+
     public async Task NotifyClient(IHubCallerClients clients, string clientId, string key, params object?[] values)
     {
         await clients.Client(clientId).SendCoreAsync(key, values);
