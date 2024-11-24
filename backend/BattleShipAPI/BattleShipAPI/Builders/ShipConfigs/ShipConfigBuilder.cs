@@ -16,10 +16,10 @@ public abstract class ShipConfigBuilder
     public abstract ShipConfigBuilder StartNormal();
     public abstract ShipConfigBuilder StartRapid();
     public abstract ShipConfigBuilder StartMobility();
-    public abstract ShipConfigBuilder AddShield();
-    public abstract ShipConfigBuilder AddMobility();
-    public abstract ShipConfigBuilder AddGlowing();
-    public abstract ShipConfigBuilder AddFragile();
+    protected abstract ShipConfigBuilder AddShield();
+    protected abstract ShipConfigBuilder AddMobility();
+    protected abstract ShipConfigBuilder AddGlowing();
+    protected abstract ShipConfigBuilder AddFragile();
 
 
     public GameMode gameMode;
