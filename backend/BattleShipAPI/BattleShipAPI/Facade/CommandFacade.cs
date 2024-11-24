@@ -1,3 +1,4 @@
+using BattleShipAPI.Command;
 using BattleShipAPI.Enums;
 using BattleShipAPI.Flyweight;
 using BattleShipAPI.Notifications;
@@ -34,6 +35,7 @@ public class CommandFacade
         _commandFactory.GetCommand("addship", () => new AddShipCommand());
         _commandFactory.GetCommand("undoplacement", () => new UndoPlacementCommand());
         _commandFactory.GetCommand("redoplacement", () => new RedoPlacementCommand());
+        _commandFactory.GetCommand("fleet", () => new PlaceFleetCommand());
     }
     
     public async Task UndoShipPlacement(
