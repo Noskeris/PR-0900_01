@@ -82,9 +82,17 @@ namespace BattleShipAPI.Models
             {
                 return false;
             }
-
-            var ship = player.PlacedShips
-                .FirstOrDefault(s => s.GetCoordinates().Contains((x, y)));
+            IPlacedShip ship = null;
+            var iterator = player.PlacedShips.CreateIterator();
+            while (iterator.HasNext())
+            {
+                var currentShip = iterator.Next();
+                if (currentShip.GetCoordinates().Contains((x, y)))
+                {
+                    ship = currentShip;
+                    break;
+                }
+            }
 
             if (ship == null)
             {
@@ -101,13 +109,27 @@ namespace BattleShipAPI.Models
 
         public bool HasAliveShips(UserConnection cellOwner)
         {
-            return cellOwner.PlacedShips
-                .Any(s => Board.Cells[s.StartX][s.StartY].State != CellState.SunkenShip);
+            var iterator = cellOwner.PlacedShips.CreateIterator();
+            while (iterator.HasNext())
+            {
+                var ship = iterator.Next();
+                if (Board.Cells[ship.StartX][ship.StartY].State != CellState.SunkenShip)
+                {
+                    return true;
+                }
+            }
+            return false;
+
         }
 
         public void SinkAllShips(UserConnection player)
         {
-            player.PlacedShips.ForEach(ship => Board.SinkShip(ship));
+            var iterator = player.PlacedShips.CreateIterator();
+            while (iterator.HasNext())
+            {
+                var ship = iterator.Next();
+                Board.SinkShip(ship);
+            }
         }
     }
 }

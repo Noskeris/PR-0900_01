@@ -4,5 +4,7 @@
     {
         bool HasNext();
         T Next();
+        void Reset();
     }
+
 }

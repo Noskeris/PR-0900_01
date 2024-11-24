@@ -1,6 +1,7 @@
 ﻿using BattleShipAPI.Enums;
 using BattleShipAPI.Bridge;
 using BattleShipAPI.Enums.Avatar;
+using BattleShipAPI.Iterator;
 
 namespace BattleShipAPI.Models
 {
@@ -17,9 +18,9 @@ namespace BattleShipAPI.Models
         public bool CanPlay { get; set; }
         
         public bool HasDisconnected { get; set; }
-        
-        public List<IPlacedShip> PlacedShips { get; set; } = new();
-        
+
+        public PlacedShipsCollection PlacedShips { get; set; } = new();
+
         public List<SuperAttackConfig> UsedSuperAttacks { get; set; } = new();
 
         public PlacingActionHistory PlacingActionHistory { get; set; } = new();
@@ -31,13 +32,14 @@ namespace BattleShipAPI.Models
             return shipsConfig.Select(shipConfig => new ShipConfig()
             {
                 ShipType = shipConfig.ShipType,
-                Count = shipConfig.Count - PlacedShips.Count(x => x.ShipType == shipConfig.ShipType),
+                Count = shipConfig.Count - PlacedShips.CountShipsOfType(shipConfig.ShipType),
                 Size = shipConfig.Size,
                 HasShield = shipConfig.HasShield,
                 HasMobility = shipConfig.HasMobility
             }).ToList();
         }
-        
+
+
         public List<SuperAttackConfig> GetAllowedSuperAttacksConfig(List<SuperAttackConfig> superAttacksConfig)
         {
             return superAttacksConfig.Select(superAttackConfig => new SuperAttackConfig()

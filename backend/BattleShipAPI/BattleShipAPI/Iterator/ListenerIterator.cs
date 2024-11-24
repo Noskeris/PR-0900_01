@@ -21,5 +21,10 @@ namespace BattleShipAPI.Iterator
         {
             return _listeners[_position++];
         }
+
+        public void Reset()
+        {
+            _position = 0;
+        }
     }
 }
