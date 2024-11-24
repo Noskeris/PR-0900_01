@@ -1,13 +1,12 @@
 // File: Models/PlacedShip.cs
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using BattleShipAPI.Composite;
 using BattleShipAPI.Enums;
 using BattleShipAPI.GameItems.Boards;
 
 namespace BattleShipAPI.Models
 {
-    public class PlacedShip : IPlacedShip
+    //leaf class of Composite pattern
+    public class PlacedShip : Component, IPlacedShip
     {
         public ShipType ShipType { get; set; }
         public int StartX { get; set; }
@@ -55,6 +54,11 @@ namespace BattleShipAPI.Models
             }
 
             return coordinates;
+        }
+
+        public override bool ValidatePlacement()
+        {
+            return StartX >= 0 && StartY >= 0 && EndX >= StartX && EndY >= StartY;
         }
     }
 }
