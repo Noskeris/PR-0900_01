@@ -1,4 +1,5 @@
-﻿using BattleShipAPI.GameItems.Ships;
+﻿using BattleShipAPI.Enums;
+using BattleShipAPI.GameItems.Ships;
 using BattleShipAPI.GameItems.SuperAttacks;
 using BattleShipAPI.Models;
 
@@ -10,11 +11,12 @@ namespace BattleShipAPI.Factories.LevelsFactory
         {
             var shipConfigs = new List<ShipConfig>
             {
-                this.BattleshipBuilder.StartNormal().Build(),
-                this.CarrierBuilder.StartNormal().Build(),
-                this.CruiserBuilder.StartNormal().Build(),
-                this.DestroyerBuilder.StartNormal().Build(),
-                this.SubmarineBuilder.StartNormal().Build()
+                //visus sutvarkyt
+                this.BattleshipBuilder.SetGameMode(GameMode.Normal).Build(),
+                this.CarrierBuilder.SetGameMode(GameMode.Normal).Build(),
+                this.CruiserBuilder.SetGameMode(GameMode.Normal).Build(),
+                this.DestroyerBuilder.SetGameMode(GameMode.Normal).Build(),
+                this.SubmarineBuilder.SetGameMode(GameMode.Normal).Build()
             };
 
             return new LevelShips(shipConfigs);

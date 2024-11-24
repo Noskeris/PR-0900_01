@@ -2,25 +2,25 @@
 {
     public class CarrierConfigBuilder : ShipConfigBuilder
     {
-        public override ShipConfigBuilder AddMobility()
+        protected override ShipConfigBuilder AddMobility()
         {
             shipConfig.HasMobility = true;
             return this;
         }
 
-        public override ShipConfigBuilder AddShield()
+        protected override ShipConfigBuilder AddShield()
         {
             shipConfig.HasShield = true;
             return this;
         }
 
-        public override ShipConfigBuilder AddGlowing()
+        protected override ShipConfigBuilder AddGlowing()
         {
             shipConfig.IsGlowing = true;
             return this;
         }
 
-        public override ShipConfigBuilder AddFragile()
+        protected override ShipConfigBuilder AddFragile()
         {
             shipConfig.IsFragile = true;
             return this;
