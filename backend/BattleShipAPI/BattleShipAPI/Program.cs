@@ -2,6 +2,8 @@ using BattleShipAPI.Adapter.Logs;
 using BattleShipAPI.Facade;
 using BattleShipAPI.Hubs;
 using BattleShipAPI.Notifications;
+using BattleShipAPI.Proxy;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BattleShipAPI
 {
@@ -33,6 +35,18 @@ namespace BattleShipAPI
 
             builder.Services.AddSingleton<ConsoleLoggerAdapter>();
             builder.Services.AddSingleton<FileLoggerAdapter>(provider => new FileLoggerAdapter("GameHub_logs.txt"));
+
+            builder.Services.AddSingleton<ILoggerOnReceive>(provider =>
+            {
+                var consoleLogger = provider.GetRequiredService<ConsoleLoggerAdapter>();
+                return new LoggerProxy(consoleLogger);
+            });
+
+            builder.Services.AddSingleton<ILoggerOnSend>(provider =>
+            {
+                var fileLogger = provider.GetRequiredService<FileLoggerAdapter>();
+                return new LoggerProxy(fileLogger);
+            });
 
             builder.Services.AddSingleton<INotificationService, NotificationService>();
             builder.Services.AddSingleton<GameFacade>();

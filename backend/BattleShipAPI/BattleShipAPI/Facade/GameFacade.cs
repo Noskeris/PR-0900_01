@@ -8,6 +8,7 @@ using BattleShipAPI.GameItems.Boards;
 using BattleShipAPI.Helpers;
 using BattleShipAPI.Models;
 using BattleShipAPI.Notifications;
+using BattleShipAPI.Proxy;
 using BattleShipAPI.Repository;
 using Microsoft.AspNetCore.SignalR;
 
@@ -17,10 +18,10 @@ public class GameFacade
 {
     private readonly InMemoryDB _db;
     private readonly INotificationService _notificationService;
-    private readonly ILoggerInterface _loggerOnReceive;
-    private readonly ILoggerInterface _loggerOnSend;
+    private readonly ILoggerOnReceive _loggerOnReceive;
+    private readonly ILoggerOnSend _loggerOnSend;
 
-    public GameFacade(INotificationService notificationService, ConsoleLoggerAdapter loggerOnReceive, FileLoggerAdapter loggerOnSend)
+    public GameFacade(INotificationService notificationService, ILoggerOnReceive loggerOnReceive, ILoggerOnSend loggerOnSend)
     {
         _notificationService = notificationService;
         _loggerOnReceive = loggerOnReceive;
