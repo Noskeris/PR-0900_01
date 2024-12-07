@@ -281,7 +281,9 @@ public class GameFacade
                 return;
             }
 
-            player.PlacingActionHistory.AddInitialState(player.PlacedShips, gameRoom.Board);
+            // Create a memento of the current state before adding the ship
+            var initialStateMemento = player.CreateMemento(gameRoom.Board);
+            player.PlacingActionHistory.AddInitialState(initialStateMemento);
 
             // Create the ship using ShipConfig.CreateShip
             IPlacedShip newShip = shipConfig.CreateShip(
@@ -303,7 +305,10 @@ public class GameFacade
             }
 
             player.PlacedShips.Add(newShip);
-            player.PlacingActionHistory.AddAction(player.PlacedShips, gameRoom.Board);
+
+            // Create another memento after adding the ship
+            var actionMemento = player.CreateMemento(gameRoom.Board);
+            player.PlacingActionHistory.AddAction(actionMemento);
 
             _db.GameRooms[gameRoom.Name] = gameRoom;
             _db.Connections[context.ConnectionId] = player;
@@ -322,6 +327,7 @@ public class GameFacade
                 gameRoom.Board);
         }
     }
+
 
 
     private async Task RevealShipAsync(IPlacedShip ship, Board board, string gameRoomName, IHubCallerClients clients)

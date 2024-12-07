@@ -9,8 +9,8 @@ public class UndoPlacementCommand : IPlayerCommand
             && gameRoom.State == GameState.PlacingShips)
         {
             var player = context.Db.Connections[context.CallerContext.ConnectionId];
-            var previousState = player.PlacingActionHistory.Undo();
-            if (previousState == null)
+            var previousMemento = player.PlacingActionHistory.Undo();
+            if (previousMemento == null)
             {
                 await context.NotificationService.NotifyClient(
                     context.Clients,
@@ -20,10 +20,12 @@ public class UndoPlacementCommand : IPlayerCommand
                 return;
             }
 
-            // Restore the board and placed ships
-            player.PlacedShips = previousState.Value.PlacedShips;
+            // Restore the player's state from the memento
+            player.RestoreFromMemento(previousMemento);
 
-            gameRoom.SetBoard(previousState.Value.BoardState);
+            // Restore the board state from the memento
+            gameRoom.SetBoard(previousMemento.BoardState);
+
             context.Db.GameRooms[gameRoom.Name] = gameRoom;
             context.Db.Connections[context.CallerContext.ConnectionId] = player;
 
@@ -32,7 +34,7 @@ public class UndoPlacementCommand : IPlayerCommand
                 gameRoom.Name,
                 "BoardUpdated",
                 gameRoom.Name,
-                previousState.Value.BoardState);
+                previousMemento.BoardState);
 
             await context.NotificationService.NotifyClient(
                 context.Clients,
