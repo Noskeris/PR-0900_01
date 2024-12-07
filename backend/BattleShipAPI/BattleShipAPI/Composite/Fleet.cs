@@ -31,5 +31,9 @@
             }
             return true;
         }
+        public override IEnumerable<Component> GetChildren()
+        {
+            return _components;
+        }
     }
 }
