@@ -2,6 +2,7 @@
 using BattleShipAPI.Bridge;
 using BattleShipAPI.Enums.Avatar;
 using BattleShipAPI.Iterator;
+using BattleShipAPI.GameItems.Boards;
 
 namespace BattleShipAPI.Models
 {
@@ -68,6 +69,31 @@ namespace BattleShipAPI.Models
             UsedSuperAttacks.Add(superAttack);
             
             return true;
+        }
+
+        public PlacementMemento CreateMemento(Board currentBoard)
+        {
+            var boardClone = currentBoard.Clone();
+            var placedShipsClone = ClonePlacedShipsCollection(this.PlacedShips);
+
+            return new PlacementMemento(placedShipsClone, boardClone);
+        }
+
+        public void RestoreFromMemento(PlacementMemento memento)
+        {
+            this.PlacedShips = memento.PlacedShips;
+        }
+
+        private PlacedShipsCollection ClonePlacedShipsCollection(PlacedShipsCollection original)
+        {
+            var clone = new PlacedShipsCollection();
+            var iterator = original.CreateIterator();
+            while (iterator.HasNext())
+            {
+                var ship = iterator.Next();
+                clone.Add(ship);
+            }
+            return clone;
         }
     }
 }
