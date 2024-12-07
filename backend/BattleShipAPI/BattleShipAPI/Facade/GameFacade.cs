@@ -10,6 +10,7 @@ using BattleShipAPI.Models;
 using BattleShipAPI.Notifications;
 using BattleShipAPI.Proxy;
 using BattleShipAPI.Repository;
+using BattleShipAPI.State;
 using Microsoft.AspNetCore.SignalR;
 
 namespace BattleShipAPI.Facade;
@@ -563,49 +564,23 @@ public class GameFacade
             await SendAvatarsToPlayers(clients, players, gameRoom.Name);
         }
     }
-    
+
     public async Task RestartGame(
         HubCallerContext context,
         IHubCallerClients clients)
     {
-        if (_db.Connections.TryGetValue(context.ConnectionId, out var connection))
+        if (_db.Connections.TryGetValue(context.ConnectionId, out var connection)
+            && _db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom))
         {
-            if (_db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom)
-                && gameRoom.State is GameState.Finished or GameState.PlacingShips
-                && connection.IsModerator)
+            var gameContext = new GameContext(_db, _notificationService)
             {
-                _db.Connections.Values
-                    .Where(c => c.GameRoomName == connection.GameRoomName && c.HasDisconnected)
-                    .ToList()
-                    .ForEach(x => _db.Connections.Remove(x.PlayerId, out _));
+                Clients = clients
+            };
 
-                gameRoom = new GameRoom() { Name = gameRoom.Name };
-                _db.GameRooms[gameRoom.Name] = gameRoom;
+            var state = GameStateFactory.GetHandler(gameRoom.State);
 
-                _db.Connections.Values
-                    .Where(c => c.GameRoomName == gameRoom.Name)
-                    .ToList()
-                    .ForEach(x =>
-                    {
-                        _db.Connections[x.PlayerId].CanPlay = false;
-                        _db.Connections[x.PlayerId].HasDisconnected = false;
-                        _db.Connections[x.PlayerId].PlacedShips.Clear();
-                        _db.Connections[x.PlayerId].UsedSuperAttacks.Clear();
-                        _db.Connections[x.PlayerId].PlacingActionHistory = new();
-                    });
-
-                await _notificationService.NotifyGroup(
-                    clients,
-                    gameRoom.Name,
-                    "GameStateChanged",
-                    (int)gameRoom.State);
-
-                await _notificationService.NotifyClient(
-                    clients,
-                    connection.PlayerId,
-                    "CurrentGameConfiguration",
-                    gameRoom.ShipsConfig);
-            }
+            gameContext.SetState(state);
+            await gameContext.RestartGame(connection);
         }
     }
 
@@ -685,7 +660,67 @@ public class GameFacade
         }
     }
     
-    public async Task HandleDisconnection(
+    public async Task HandleDisconnection(HubCallerContext callerContext, IHubCallerClients clients)
+    {
+        if (_db.Connections.TryGetValue(callerContext.ConnectionId, out var connection))
+        {
+            _notificationService.Unsubscribe(callerContext.ConnectionId);
+            
+            var players = _db.Connections.Values
+                .Where(c => c.GameRoomName == connection.GameRoomName)
+                .ToList();
+
+            var haveAllPlayersDisconnected = players
+                .Where(x => x.PlayerId != connection.PlayerId)
+                .All(p => p.HasDisconnected);
+
+            if (haveAllPlayersDisconnected)
+            {
+                _db.GameRooms.Remove(connection.GameRoomName, out _);
+                _db.Connections.Values
+                    .Where(c => c.GameRoomName == connection.GameRoomName)
+                    .ToList()
+                    .ForEach(x => _db.Connections.Remove(x.PlayerId, out _));
+
+                return;
+            }
+
+            if (connection.IsModerator)
+            {
+                var newModerator = players
+                    .First(x => x.PlayerId != connection.PlayerId);
+
+                newModerator.IsModerator = true;
+                _db.Connections[newModerator.PlayerId] = newModerator;
+                _db.Connections[connection.PlayerId].IsModerator = false;
+
+                await _notificationService.NotifyClient(
+                    clients,
+                    newModerator.PlayerId,
+                    "SetModerator",
+                    _db.Connections[newModerator.PlayerId].IsModerator);
+            }
+
+            if (_db.GameRooms.TryGetValue(connection.GameRoomName, out var gameRoom))
+            {
+                var context = new GameContext(_db, _notificationService)
+                {
+                    CallerContext = callerContext,
+                    Clients = clients
+                };
+
+                var state = GameStateFactory.GetHandler(gameRoom.State);
+
+                context.SetState(state);
+                await context.HandleDisconnection(connection);
+            }
+            
+            await SendAvatarsToPlayers(clients, players, gameRoom.Name);
+        }
+    }
+
+    
+    public async Task HandleDisconnectio(
     HubCallerContext context,
     IHubCallerClients clients)
 {
@@ -751,8 +786,6 @@ public class GameFacade
                         "PlayerDisconnected",
                         $"Player {connection.Username} has disconnected. Game need to be restarted");
 
-                    var moderator = _db.Connections.Values
-                        .First(x => x.GameRoomName == gameRoom.Name && x.IsModerator);
                     await RestartGame(context, clients);
                     break;
 

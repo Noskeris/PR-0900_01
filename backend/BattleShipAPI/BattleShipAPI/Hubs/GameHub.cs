@@ -2,10 +2,8 @@
 using BattleShipAPI.Enums.Avatar;
 using BattleShipAPI.Facade;
 using BattleShipAPI.Models;
-using BattleShipAPI.Repository;
 using Microsoft.AspNetCore.SignalR;
 
-//TODO add ship mobility logic
 
 namespace BattleShipAPI.Hubs
 {
