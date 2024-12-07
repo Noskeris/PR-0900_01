@@ -22,5 +22,10 @@
         {
             throw new NotImplementedException("This component does not support child access.");
         }
+
+        public virtual IEnumerable<Component> GetChildren()
+        {
+            throw new NotImplementedException("This component does not support iterating over children.");
+        }
     }
 }
