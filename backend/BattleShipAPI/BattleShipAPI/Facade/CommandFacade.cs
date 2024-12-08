@@ -1,6 +1,7 @@
 using BattleShipAPI.Command;
 using BattleShipAPI.Enums;
 using BattleShipAPI.Flyweight;
+using BattleShipAPI.Interpreter;
 using BattleShipAPI.Notifications;
 using BattleShipAPI.Repository;
 using Microsoft.AspNetCore.SignalR;
@@ -126,25 +127,9 @@ namespace BattleShipAPI.Facade
             IHubCallerClients clients,
             string command)
         {
-            var commandParts = command.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            if (commandParts.Length == 0)
-            {
-                await _notificationService.NotifyClient(clients, context.ConnectionId, "UnknownCommand", "No command provided.");
-                return;
-            }
-
-            var action = commandParts[0].ToLower();
-
-            var playerCommand = _commandFactory.GetCommand(action, null);
-            if (playerCommand != null)
-            {
-                var commandContext = new CommandContext(_gameFacade, clients, context, _notificationService);
-                await playerCommand.Execute(commandContext, commandParts);
-            }
-            else
-            {
-                await _notificationService.NotifyClient(clients, context.ConnectionId, "UnknownCommand", $"Unknown command: {command}");
-            }
+            var commandContext = new CommandContext(_gameFacade, clients, context, _notificationService);
+            var interpreter = new CommandInterpreter();
+            await interpreter.InterpretAsync(commandContext, command);
         }
     }
 }
