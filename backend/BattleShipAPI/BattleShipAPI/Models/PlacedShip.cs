@@ -1,5 +1,6 @@
 // File: Models/PlacedShip.cs
 using BattleShipAPI.Composite;
+using BattleShipAPI.Decorator;
 using BattleShipAPI.Enums;
 using BattleShipAPI.GameItems.Boards;
 using BattleShipAPI.Visitor;

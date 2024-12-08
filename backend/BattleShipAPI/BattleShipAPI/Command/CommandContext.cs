@@ -3,6 +3,8 @@ using BattleShipAPI.Notifications;
 using BattleShipAPI.Repository;
 using Microsoft.AspNetCore.SignalR;
 
+namespace BattleShipAPI.Command;
+
 public class CommandContext
 {
     public IHubCallerClients Clients { get; }

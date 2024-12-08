@@ -1,4 +1,5 @@
-﻿using BattleShipAPI.Enums;
+﻿using BattleShipAPI.Decorator;
+using BattleShipAPI.Enums;
 using BattleShipAPI.Models;
 using BattleShipAPI.Prototype;
 

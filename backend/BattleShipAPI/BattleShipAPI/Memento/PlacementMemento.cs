@@ -1,6 +1,8 @@
 ﻿using BattleShipAPI.GameItems.Boards;
 using BattleShipAPI.Iterator;
 
+namespace BattleShipAPI.Memento;
+
 public class PlacementMemento
 {
     public PlacedShipsCollection PlacedShips { get; }

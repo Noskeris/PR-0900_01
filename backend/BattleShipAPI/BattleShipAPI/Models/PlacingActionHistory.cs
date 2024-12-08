@@ -1,4 +1,8 @@
-﻿public class PlacingActionHistory
+﻿using BattleShipAPI.Memento;
+
+namespace BattleShipAPI.Models;
+
+public class PlacingActionHistory
 {
     private List<PlacementMemento> _history = new List<PlacementMemento>();
     private int _currentPointer = -1;

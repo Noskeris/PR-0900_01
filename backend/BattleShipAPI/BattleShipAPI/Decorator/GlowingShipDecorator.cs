@@ -1,5 +1,7 @@
 ﻿using BattleShipAPI.GameItems.Boards;
 
+namespace BattleShipAPI.Decorator;
+
 public class GlowingShipDecorator : PlacedShipDecorator
 {
     private readonly Action<IPlacedShip, Board> _revealShipAction;

@@ -2,6 +2,8 @@
 using BattleShipAPI.GameItems.Boards;
 using BattleShipAPI.Models;
 
+namespace BattleShipAPI.Command;
+
 public class UndoPlacementCommand : IPlayerCommand
 {
     public async Task Execute(CommandContext context, string[] args)

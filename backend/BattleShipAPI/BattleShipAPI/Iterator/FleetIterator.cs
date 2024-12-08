@@ -1,8 +1,6 @@
-﻿using BattleShipAPI.Iterator;
-using System;
-using System.Collections.Generic;
+﻿using BattleShipAPI.Composite;
 
-namespace BattleShipAPI.Composite
+namespace BattleShipAPI.Iterator
 {
     public class FleetIterator : IIterator<Component>
     {

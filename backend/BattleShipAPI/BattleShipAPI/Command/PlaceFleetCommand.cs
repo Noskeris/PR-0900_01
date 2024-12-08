@@ -63,7 +63,7 @@ namespace BattleShipAPI.Command
 
                 foreach (var ship in placementVisitor.GetValidShips())
                 {
-                    await context.GameFacade.AddShip(context.CallerContext, context.Clients, ship);
+                    await context.GameFacade.HandleAction("AddShip", context.CallerContext, context.Clients, ship);
                 }
             }
             else

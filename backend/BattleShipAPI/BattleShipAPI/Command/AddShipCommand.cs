@@ -1,10 +1,7 @@
 ﻿using BattleShipAPI.Enums;
 using BattleShipAPI.Models;
-using BattleShipAPI.Facade;
-using BattleShipAPI.Notifications;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
+
+namespace BattleShipAPI.Command;
 
 public class AddShipCommand : IPlayerCommand
 {
@@ -56,7 +53,7 @@ public class AddShipCommand : IPlayerCommand
                 };
 
                 // Call GameFacade.AddShip with the PlacedShip data
-                await context.GameFacade.AddShip(context.CallerContext, context.Clients, placedShipData);
+                await context.GameFacade.HandleAction("AddShip", context.CallerContext, context.Clients, placedShipData);
             }
             else
             {

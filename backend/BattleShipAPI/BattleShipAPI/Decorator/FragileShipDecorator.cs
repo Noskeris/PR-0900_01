@@ -1,6 +1,6 @@
-﻿using BattleShipAPI.Enums;
-using BattleShipAPI.GameItems.Boards;
+﻿using BattleShipAPI.GameItems.Boards;
 
+namespace BattleShipAPI.Decorator;
 
 public class FragileShipDecorator : PlacedShipDecorator
 {
@@ -17,4 +17,3 @@ public class FragileShipDecorator : PlacedShipDecorator
     }
 
 }
-

@@ -1,4 +1,6 @@
-﻿namespace BattleShipAPI.Interpreter
+﻿using BattleShipAPI.Command;
+
+namespace BattleShipAPI.Interpreter
 {
     public class ReadyCommandExpression : ICommandExpression
     {

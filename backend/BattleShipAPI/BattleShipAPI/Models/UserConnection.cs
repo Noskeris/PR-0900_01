@@ -3,6 +3,7 @@ using BattleShipAPI.Bridge;
 using BattleShipAPI.Enums.Avatar;
 using BattleShipAPI.Iterator;
 using BattleShipAPI.GameItems.Boards;
+using BattleShipAPI.Memento;
 
 namespace BattleShipAPI.Models
 {

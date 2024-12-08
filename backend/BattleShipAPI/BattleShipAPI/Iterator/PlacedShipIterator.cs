@@ -1,4 +1,6 @@
-﻿namespace BattleShipAPI.Iterator
+﻿using BattleShipAPI.Decorator;
+
+namespace BattleShipAPI.Iterator
 {
     public class PlacedShipIterator : IIterator<IPlacedShip>
     {

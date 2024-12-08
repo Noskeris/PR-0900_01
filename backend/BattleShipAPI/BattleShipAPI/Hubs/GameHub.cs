@@ -4,7 +4,6 @@ using BattleShipAPI.Facade;
 using BattleShipAPI.Models;
 using Microsoft.AspNetCore.SignalR;
 
-
 namespace BattleShipAPI.Hubs
 {
     public class GameHub : Hub
@@ -20,57 +19,60 @@ namespace BattleShipAPI.Hubs
 
         public async Task JoinSpecificGameRoom(UserConnection connection)
         {
-            await _gameFacade.JoinSpecificGameRoom(Context, Clients, connection);
+            await _gameFacade.HandleAction("JoinSpecificGameRoom", Context, Clients, connection);
         }
 
         public async Task ConfirmGameMode(GameMode gameMode)
         {
-            await _gameFacade.ConfirmGameMode(Context, Clients, gameMode);
+            await _gameFacade.HandleAction("ConfirmGameMode", Context, Clients, gameMode);
         }
 
         public async Task GenerateBoard()
         {
-            await _gameFacade.GenerateBoard(Context, Clients);
+            await _gameFacade.HandleAction("GenerateBoard", Context, Clients);
         }
 
         public async Task ChangeAvatar(HeadType headType, AppearanceType appearanceType)
         {
-            await _gameFacade.ChangeAvatar(Context, Clients, headType, appearanceType);
+            var avatarData = new AvatarRequest { HeadType = headType, AppearanceType = appearanceType };
+            await _gameFacade.HandleAction("ChangeAvatar", Context, Clients, avatarData);
         }
 
         public async Task AddShip(PlacedShip placedShipData)
         {
-            await _gameFacade.AddShip(Context, Clients, placedShipData);
+            await _gameFacade.HandleAction("AddShip", Context, Clients, placedShipData);
         }
 
         public async Task SetPlayerToReady()
         {
-            await _gameFacade.SetPlayerToReady(Context, Clients);
+            await _gameFacade.HandleAction("SetPlayerToReady", Context, Clients);
         }
 
         public async Task StartGame()
         {
-            await _gameFacade.StartGame(Context, Clients);
+            await _gameFacade.HandleAction("StartGame", Context, Clients);
         }
 
         public async Task PlayerTurnTimeEnded()
         {
-            await _gameFacade.PlayerTurnTimeEnded(Context, Clients);
+            await _gameFacade.HandleAction("PlayerTurnTimeEnded", Context, Clients);
         }
-        
+
         public async Task AttackCell(int x, int y, AttackType attackType = AttackType.Normal)
         {
-            await _gameFacade.AttackCell(Context, Clients, x, y, attackType);
+            var attackData = new AttackRequest { X = x, Y = y, AttackType = attackType };
+            await _gameFacade.HandleAction("AttackCell", Context, Clients, attackData);
         }
 
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
-            await _gameFacade.HandleDisconnection(Context, Clients);
+            await _gameFacade.HandleAction("OnDisconnected", Context, Clients);
             await base.OnDisconnectedAsync(exception);
         }
+
         public async Task RestartGame()
         {
-            await _gameFacade.RestartGame(Context, Clients);
+            await _gameFacade.HandleAction("RestartGame", Context, Clients);
         }
 
         public async Task UndoShipPlacement()
@@ -82,7 +84,7 @@ namespace BattleShipAPI.Hubs
         {
             await _commandFacade.RedoShipPlacement(Context, Clients);
         }
-        
+
         public async Task HandlePlayerCommand(string command)
         {
             await _commandFacade.HandlePlayerCommand(Context, Clients, command);

@@ -1,4 +1,6 @@
-﻿namespace BattleShipAPI.Flyweight
+﻿using BattleShipAPI.Command;
+
+namespace BattleShipAPI.Flyweight
 {
     public class FlyweightCommandFactory
     {

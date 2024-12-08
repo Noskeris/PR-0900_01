@@ -1,6 +1,6 @@
-﻿using System;
-using BattleShipAPI.Enums;
-using BattleShipAPI.GameItems.Boards;
+﻿using BattleShipAPI.GameItems.Boards;
+
+namespace BattleShipAPI.Decorator;
 
 public class ShieldedShipDecorator : PlacedShipDecorator
 {

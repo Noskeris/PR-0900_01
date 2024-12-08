@@ -1,6 +1,7 @@
-﻿using System.Collections.Generic;
-using BattleShipAPI.Enums;
+﻿using BattleShipAPI.Enums;
 using BattleShipAPI.GameItems.Boards;
+
+namespace BattleShipAPI.Decorator;
 
 public abstract class PlacedShipDecorator : IPlacedShip
 {
@@ -54,4 +55,3 @@ public abstract class PlacedShipDecorator : IPlacedShip
         return _placedShip.GetCoordinates();
     }
 }
-

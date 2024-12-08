@@ -1,7 +1,9 @@
-﻿public class StartGameCommand : IPlayerCommand
+﻿namespace BattleShipAPI.Command;
+
+public class StartGameCommand : IPlayerCommand
 {
     public async Task Execute(CommandContext context, string[] args)
     {
-        await context.GameFacade.StartGame(context.CallerContext, context.Clients);
+        await context.GameFacade.HandleAction("StartGame", context.CallerContext, context.Clients);
     }
 }

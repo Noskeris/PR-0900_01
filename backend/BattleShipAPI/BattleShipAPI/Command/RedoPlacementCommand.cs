@@ -2,6 +2,8 @@
 using BattleShipAPI.GameItems.Boards;
 using BattleShipAPI.Models;
 
+namespace BattleShipAPI.Command;
+
 public class RedoPlacementCommand : IPlayerCommand
 {
     public async Task Execute(CommandContext context, string[] args)

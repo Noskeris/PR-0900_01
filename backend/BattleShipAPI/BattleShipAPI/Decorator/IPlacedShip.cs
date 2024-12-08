@@ -1,6 +1,8 @@
 ﻿using BattleShipAPI.Enums;
 using BattleShipAPI.GameItems.Boards;
 
+namespace BattleShipAPI.Decorator;
+
 public interface IPlacedShip
 {
     ShipType ShipType { get; set; }

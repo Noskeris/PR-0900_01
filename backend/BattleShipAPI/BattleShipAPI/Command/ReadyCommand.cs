@@ -1,7 +1,9 @@
-﻿public class ReadyCommand : IPlayerCommand
+﻿namespace BattleShipAPI.Command;
+
+public class ReadyCommand : IPlayerCommand
 {
     public async Task Execute(CommandContext context, string[] args)
     {
-        await context.GameFacade.SetPlayerToReady(context.CallerContext, context.Clients);
+        await context.GameFacade.HandleAction("SetPlayerToReady", context.CallerContext, context.Clients);
     }
 }

@@ -3,7 +3,6 @@ using BattleShipAPI.Facade;
 using BattleShipAPI.Hubs;
 using BattleShipAPI.Notifications;
 using BattleShipAPI.Proxy;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace BattleShipAPI
 {
