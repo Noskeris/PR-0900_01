@@ -2,6 +2,7 @@
 using BattleShipAPI.Composite;
 using BattleShipAPI.Enums;
 using BattleShipAPI.GameItems.Boards;
+using BattleShipAPI.Visitor;
 
 namespace BattleShipAPI.Models
 {
@@ -59,6 +60,11 @@ namespace BattleShipAPI.Models
         public override bool ValidatePlacement()
         {
             return StartX >= 0 && StartY >= 0 && EndX >= StartX && EndY >= StartY;
+        }
+
+        public override void Accept(IVisitor visitor)
+        {
+            visitor.VisitPlacedShip(this);
         }
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace BattleShipAPI.Composite
+﻿using BattleShipAPI.Visitor;
+
+namespace BattleShipAPI.Composite
 {
     //Composite class of Composite pattern
     public class Fleet : Component
@@ -34,6 +36,15 @@
         public override IEnumerable<Component> GetChildren()
         {
             return _components;
+        }
+
+        public override void Accept(IVisitor visitor)
+        {
+            visitor.VisitFleet(this);
+            foreach (var component in GetChildren())
+            {
+                component.Accept(visitor);
+            }
         }
     }
 }

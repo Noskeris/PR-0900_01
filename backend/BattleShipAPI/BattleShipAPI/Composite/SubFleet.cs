@@ -1,4 +1,6 @@
-﻿namespace BattleShipAPI.Composite
+﻿using BattleShipAPI.Visitor;
+
+namespace BattleShipAPI.Composite
 {
     public class SubFleet : Fleet
     {
@@ -12,6 +14,12 @@
         public SubFleetType GetFleetType()
         {
             return _type;
+        }
+
+        public override void Accept(IVisitor visitor)
+        {
+            visitor.VisitSubFleet(this);
+            base.Accept(visitor); 
         }
     }
 }

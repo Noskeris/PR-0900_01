@@ -1,7 +1,9 @@
-﻿namespace BattleShipAPI.Composite
+﻿using BattleShipAPI.Visitor;
+
+namespace BattleShipAPI.Composite
 {
     //Component of Composite pattern
-    public abstract class Component
+    public abstract class Component : IVisitable
     {
         public virtual bool ValidatePlacement()
         {
@@ -26,6 +28,11 @@
         public virtual IEnumerable<Component> GetChildren()
         {
             throw new NotImplementedException("This component does not support iterating over children.");
+        }
+
+        public virtual void Accept(IVisitor visitor)
+        {
+            throw new NotImplementedException($"This component does not implement Accept for visitors.");
         }
     }
 }

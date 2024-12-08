@@ -2,6 +2,7 @@
 using BattleShipAPI.Enums;
 using BattleShipAPI.Iterator;
 using BattleShipAPI.Models;
+using BattleShipAPI.Visitor;
 
 namespace BattleShipAPI.Command
 {
@@ -41,24 +42,29 @@ namespace BattleShipAPI.Command
 
                 var fleetAggregate = new FleetAggregate(fleet);
                 var iterator = fleetAggregate.CreateIterator();
+                var placementVisitor = new ShipPlacementVisitor();
 
                 while (iterator.HasNext())
                 {
                     var component = iterator.Next();
-                    if (component is PlacedShip ship)
-                    {
-                        if (component.ValidatePlacement())
-                        {
-                            await context.GameFacade.AddShip(context.CallerContext, context.Clients, ship);
-                        }
-                    }
+                    component.Accept(placementVisitor);
                 }
 
-                await context.NotificationService.NotifyClient(
-                    context.Clients,
-                    context.CallerContext.ConnectionId,
-                    "FleetPlaced",
-                    "Fleet successfully placed.");
+                var validationErrors = placementVisitor.GetValidationErrors();
+                if (validationErrors.Any())
+                {
+                    await context.NotificationService.NotifyClient(
+                        context.Clients,
+                        context.CallerContext.ConnectionId,
+                        "FailedToPlaceFleet",
+                        string.Join("\n", validationErrors));
+                    return;
+                }
+
+                foreach (var ship in placementVisitor.GetValidShips())
+                {
+                    await context.GameFacade.AddShip(context.CallerContext, context.Clients, ship);
+                }
             }
             else
             {
@@ -87,37 +93,27 @@ namespace BattleShipAPI.Command
             if (pattern == "v")
             {
                 if (carrierConfig != null) //5
-                    //fleet.Add(CreatePlacedShip(ShipType.Carrier, ShipOrientation.Vertical, carrierConfig.Size, startX + 4, startY + 0));
                     longShipSubFleet.Add(CreatePlacedShip(ShipType.Carrier, ShipOrientation.Vertical, carrierConfig.Size, startX + 4, startY + 0)); 
                 if (battleshipConfig != null) // 4
-                    //fleet.Add(CreatePlacedShip(ShipType.Battleship, ShipOrientation.Vertical, battleshipConfig.Size, startX + 6, startY + 2));
                     longShipSubFleet.Add(CreatePlacedShip(ShipType.Battleship, ShipOrientation.Vertical, battleshipConfig.Size, startX + 6, startY + 2));
                 if (cruiserConfig != null) // 3
-                    //fleet.Add(CreatePlacedShip(ShipType.Cruiser, ShipOrientation.Vertical, cruiserConfig.Size, startX + 2, startY + 2));
                     longShipSubFleet.Add(CreatePlacedShip(ShipType.Cruiser, ShipOrientation.Vertical, cruiserConfig.Size, startX + 2, startY + 2));
                 if (submarineConfig != null) //2
-                    //fleet.Add(CreatePlacedShip(ShipType.Submarine, ShipOrientation.Vertical, submarineConfig.Size, startX + 8, startY + 4));
                     shortShipSubFleet.Add(CreatePlacedShip(ShipType.Submarine, ShipOrientation.Vertical, submarineConfig.Size, startX + 8, startY + 4));
                 if (destroyerConfig != null) // 1
-                    //fleet.Add(CreatePlacedShip(ShipType.Destroyer, ShipOrientation.Vertical, destroyerConfig.Size, startX + 0, startY + 4));
                     shortShipSubFleet.Add(CreatePlacedShip(ShipType.Destroyer, ShipOrientation.Vertical, destroyerConfig.Size, startX + 0, startY + 4));
             }
             else if (pattern == "corner")
             {
                 if (carrierConfig != null)
-                    //fleet.Add(CreatePlacedShip(ShipType.Carrier, ShipOrientation.Horizontal, carrierConfig.Size, startX + 0, startY + 0));
                     longShipSubFleet.Add(CreatePlacedShip(ShipType.Carrier, ShipOrientation.Horizontal, carrierConfig.Size, startX + 0, startY + 0));
                 if (battleshipConfig != null)
-                    //fleet.Add(CreatePlacedShip(ShipType.Battleship, ShipOrientation.Horizontal, battleshipConfig.Size, startX + 0, startY + 1));
                     longShipSubFleet.Add(CreatePlacedShip(ShipType.Battleship, ShipOrientation.Horizontal, battleshipConfig.Size, startX + 0, startY + 1));
                 if (cruiserConfig != null)
-                    //fleet.Add(CreatePlacedShip(ShipType.Cruiser, ShipOrientation.Horizontal, cruiserConfig.Size, startX + 0, startY + 2));
                     longShipSubFleet.Add(CreatePlacedShip(ShipType.Cruiser, ShipOrientation.Horizontal, cruiserConfig.Size, startX + 0, startY + 2));
                 if (submarineConfig != null)
-                    //fleet.Add(CreatePlacedShip(ShipType.Submarine, ShipOrientation.Horizontal, submarineConfig.Size, startX + 0, startY + 3));
                     shortShipSubFleet.Add(CreatePlacedShip(ShipType.Submarine, ShipOrientation.Horizontal, submarineConfig.Size, startX + 0, startY + 3));
                 if (destroyerConfig != null)
-                    //fleet.Add(CreatePlacedShip(ShipType.Destroyer, ShipOrientation.Horizontal, destroyerConfig.Size, startX + 0, startY + 4));
                     shortShipSubFleet.Add(CreatePlacedShip(ShipType.Destroyer, ShipOrientation.Horizontal, destroyerConfig.Size, startX + 0, startY + 4));
             }
             else
