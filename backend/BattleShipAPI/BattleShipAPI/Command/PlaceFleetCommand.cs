@@ -92,15 +92,15 @@ namespace BattleShipAPI.Command
 
             if (pattern == "v")
             {
-                if (carrierConfig != null) //5
+                if (carrierConfig != null) 
                     longShipSubFleet.Add(CreatePlacedShip(ShipType.Carrier, ShipOrientation.Vertical, carrierConfig.Size, startX + 4, startY + 0)); 
-                if (battleshipConfig != null) // 4
+                if (battleshipConfig != null) 
                     longShipSubFleet.Add(CreatePlacedShip(ShipType.Battleship, ShipOrientation.Vertical, battleshipConfig.Size, startX + 6, startY + 2));
-                if (cruiserConfig != null) // 3
+                if (cruiserConfig != null) 
                     longShipSubFleet.Add(CreatePlacedShip(ShipType.Cruiser, ShipOrientation.Vertical, cruiserConfig.Size, startX + 2, startY + 2));
-                if (submarineConfig != null) //2
+                if (submarineConfig != null)
                     shortShipSubFleet.Add(CreatePlacedShip(ShipType.Submarine, ShipOrientation.Vertical, submarineConfig.Size, startX + 8, startY + 4));
-                if (destroyerConfig != null) // 1
+                if (destroyerConfig != null)
                     shortShipSubFleet.Add(CreatePlacedShip(ShipType.Destroyer, ShipOrientation.Vertical, destroyerConfig.Size, startX + 0, startY + 4));
             }
             else if (pattern == "corner")
