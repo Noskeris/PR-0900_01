@@ -1,11 +1,12 @@
 using BattleShipAPI.Iterator;
+using BattleShipAPI.Mediator;
 using BattleShipAPI.Repository;
 using Microsoft.AspNetCore.SignalR;
 
 namespace BattleShipAPI.Notifications;
 
 // 5. DESIGN PATTERN: Observer
-public class NotificationService : INotificationService
+public class NotificationService : BaseComponent, INotificationService
 {
     private readonly InMemoryDB _db;
 

@@ -113,6 +113,11 @@ public class AttackCellHandler : GameHandler
         }
     }
 
+    public async Task ContinueAttackHandling()
+    {
+        _mediator.Notify()
+    }
+
     private async Task AttackCellByOne(
         int x,
         int y,

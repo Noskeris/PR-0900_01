@@ -1,8 +1,9 @@
+using BattleShipAPI.Mediator;
 using Microsoft.AspNetCore.SignalR;
 
 namespace BattleShipAPI.ChainOfResponsibility;
 
-public abstract class GameHandler : IGameHandler
+public abstract class GameHandler : BaseComponent, IGameHandler
 {
     protected IGameHandler? NextHandler;
 

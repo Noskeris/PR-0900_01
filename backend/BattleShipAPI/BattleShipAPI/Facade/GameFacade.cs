@@ -1,7 +1,9 @@
 using BattleShipAPI.ChainOfResponsibility;
 using BattleShipAPI.ChainOfResponsibility.Handlers;
+using BattleShipAPI.Mediator;
 using BattleShipAPI.Notifications;
 using BattleShipAPI.Proxy;
+using BattleShipAPI.Services;
 using Microsoft.AspNetCore.SignalR;
 
 namespace BattleShipAPI.Facade;
@@ -23,6 +25,8 @@ public class GameFacade
         var attackCellHandler = new AttackCellHandler(notificationService);
         var restartGameHandler = new RestartGameHandler(notificationService);
         var disconnectHandler = new DisconnectionHandler(notificationService);
+        
+        new ConcreteMediator(attackCellHandler, notificationService, new GameValidationService());
         
         joinRoomHandler
             .SetNext(confirmGameModeHandler)
