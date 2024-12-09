@@ -33,7 +33,7 @@ public class ConcreteMediator : IMediator
         switch (eventName)
         {
             case "ValidateAttackCellRequest":
-                _gameValidationService.ValidateAttackRequest((data as AttackRequestValidationRequest)!);
+                await _gameValidationService.ValidateAttackRequest((data as AttackInformation)!);
                 break;
             case "InformClient":
                 var clientRequest = (data as InformClientRequest)!;
@@ -41,16 +41,16 @@ public class ConcreteMediator : IMediator
                 break;
             case "InformGroup":
                 var groupRequest = (data as InformGroupRequest)!;
-                await _notificationService.NotifyClient(groupRequest.Clients, groupRequest.GroupName, groupRequest.Key, groupRequest.Values);
+                await _notificationService.NotifyGroup(groupRequest.Clients, groupRequest.GroupName, groupRequest.Key, groupRequest.Values);
                 break;
             case "InformAboutAttackCellRequestValidationSuccess":
-                await _attackCellHandler.ContinueAttackHandling();
+                await _attackCellHandler.ContinueAttackHandling((data as AttackInformation)!);
                 break;
             case "PerformCellAttack":
-                _attackService.PerformCellAttack((data as PerformAttackRequest)!);
+                await _attackService.PerformAttack((data as AttackInformation)!);
                 break;
             case "InformAboutPerformedCellAttackSuccess":
-                _gameValidationService.UpdateGameState(data);
+                await _attackCellHandler.FinishAttackHandling((data as AttackInformation)!);
                 break;
             default:
                 Console.WriteLine("Unknown event.");

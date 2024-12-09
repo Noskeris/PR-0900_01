@@ -22,11 +22,11 @@ public class GameFacade
         var setPlayerToReadyHandler = new SetPlayerToReadyHandler(notificationService, loggerOnReceive, loggerOnSend);
         var startGameHandler = new StartGameHandler(notificationService);
         var playerTurnEndedHandler = new PlayerTurnTimeEndedHandler(notificationService);
-        var attackCellHandler = new AttackCellHandler(notificationService);
+        var attackCellHandler = new AttackCellHandler();
         var restartGameHandler = new RestartGameHandler(notificationService);
         var disconnectHandler = new DisconnectionHandler(notificationService);
         
-        new ConcreteMediator(attackCellHandler, notificationService, new GameValidationService());
+        new ConcreteMediator(attackCellHandler, notificationService, new GameValidationService(), new AttackService());
         
         joinRoomHandler
             .SetNext(confirmGameModeHandler)

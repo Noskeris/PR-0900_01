@@ -6,23 +6,35 @@ namespace BattleShipAPI.Services;
 
 public class GameValidationService : BaseComponent
 {
-    public void ValidateAttackRequest(AttackRequestValidationRequest request)
+    public async Task ValidateAttackRequest(AttackInformation request)
     {
-        if (request.Cell.OwnerId == request.Connection.PlayerId)
+        var cell = request.GameRoom.Board.Cells[request.AttackRequest.X][request.AttackRequest.Y];
+            
+        if (cell.OwnerId == request.Connection.PlayerId)
         {
-            // Call mediator InformAboutAttackCellRequestValidationFailure with message "You cannot attack your own territory."
-            await _mediator.Notify();
+            await _mediator.Notify("InformClient", new InformClientRequest()
+            {
+                Clients = request.Clients,
+                ClientId = request.Context.ConnectionId,
+                Key = "FailedToAttackCell",
+                Values = ["You cannot attack your own territory."]
+            });
             return;
         }
 
-        if (request.Cell.State == CellState.DamagedShip || request.Cell.State == CellState.SunkenShip ||
-            request.Cell.State == CellState.Missed)
+        if (cell.State == CellState.DamagedShip || cell.State == CellState.SunkenShip ||
+            cell.State == CellState.Missed)
         {
-            
-            // Call mediator InformAboutAttackCellRequestValidationFailure with message "This territory has already been attacked.");
+            await _mediator.Notify("InformClient", new InformClientRequest()
+            {
+                Clients = request.Clients,
+                ClientId = request.Context.ConnectionId,
+                Key = "FailedToAttackCell",
+                Values = ["This territory has already been attacked."]
+            });
             return;
         }
         
-        // Call mediator InformAboutAttackCellRequestValidationSuccess
+        await _mediator.Notify("InformAboutAttackCellRequestValidationSuccess", request);
     }
 }
